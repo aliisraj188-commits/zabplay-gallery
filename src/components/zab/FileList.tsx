@@ -1,5 +1,5 @@
 import { FileText, Trash2 } from "lucide-react";
-import { formatSize, mediaStore, type MediaItem } from "@/lib/media-store";
+import { formatSize, prettyName, mediaStore, type MediaItem } from "@/lib/media-store";
 
 export function FileList({ items }: { items: MediaItem[] }) {
   return (
@@ -10,7 +10,7 @@ export function FileList({ items }: { items: MediaItem[] }) {
             <FileText className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{it.name}</p>
+            <p className="truncate text-sm font-medium text-foreground">{prettyName(it.name)}</p>
             <p className="text-xs text-muted-foreground">
               {it.mimeType || "file"} • {formatSize(it.size)}
             </p>
