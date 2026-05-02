@@ -139,6 +139,34 @@ export function formatDuration(s?: number) {
   return `${min}:${String(sec).padStart(2, "0")}`;
 }
 
+// Turn a raw filename like "VID_20240115_184522_001.mp4" or
+// "IMG-20231009-WA0021.jpg" into a friendly gallery-style title.
+// Removes the extension, strips long digit/underscore sequences, and
+// collapses separators. Falls back to the original (sans extension) if
+// the cleanup leaves nothing meaningful.
+export function prettyName(name: string): string {
+  if (!name) return "";
+  // strip extension
+  const dot = name.lastIndexOf(".");
+  let base = dot > 0 ? name.slice(0, dot) : name;
+  // Common camera/whatsapp prefixes
+  const prefixed = base.match(/^(VID|IMG|PXL|MVI|DSC|AUD|REC|VIDEO|PHOTO|SCREENSHOT|SCR|WA)[-_ ]?(.*)$/i);
+  if (prefixed) base = prefixed[2] || base;
+  // Drop runs of 6+ digits (timestamps, dates) and trailing -WA0001 etc.
+  let cleaned = base
+    .replace(/[-_ ]?WA\d+/gi, "")
+    .replace(/\d{6,}/g, " ")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) {
+    cleaned = (dot > 0 ? name.slice(0, dot) : name).replace(/[-_]+/g, " ").trim();
+  }
+  // Capitalise first letter of each word
+  cleaned = cleaned.replace(/\b\w/g, (c) => c.toUpperCase());
+  return cleaned || name;
+}
+
 export function formatSize(b: number) {
   if (b < 1024) return `${b} B`;
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
