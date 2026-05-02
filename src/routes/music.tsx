@@ -6,7 +6,7 @@ import { AddMediaButton } from "@/components/zab/AddMediaButton";
 import { EmptyState } from "@/components/zab/EmptyState";
 import { useMediaItems } from "@/hooks/use-media-store";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
-import type { MediaItem } from "@/lib/media-store";
+import { prettyName, type MediaItem } from "@/lib/media-store";
 
 export const Route = createFileRoute("/music")({
   component: MusicPage,
@@ -40,7 +40,7 @@ function MusicPage() {
             <Music2 className="h-5 w-5 text-brand" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{current.name}</p>
+            <p className="truncate text-sm font-medium text-foreground">{prettyName(current.name)}</p>
             <p className="text-[11px] text-muted-foreground">
               {player.playing ? "Now playing" : "Paused"}
             </p>
