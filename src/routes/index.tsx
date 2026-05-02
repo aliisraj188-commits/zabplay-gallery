@@ -1,26 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PlaySquare } from "lucide-react";
+import { AppShell } from "@/components/zab/AppShell";
+import { VideoCard } from "@/components/zab/VideoCard";
+import { AddMediaButton } from "@/components/zab/AddMediaButton";
+import { EmptyState } from "@/components/zab/EmptyState";
+import { useMediaItems } from "@/hooks/use-media-store";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: VideosPage,
+  head: () => ({ meta: [{ title: "ZabPlay - Videos" }] }),
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function VideosPage() {
+  const videos = useMediaItems("video");
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <AppShell>
+      {videos.length === 0 ? (
+        <EmptyState
+          icon={PlaySquare}
+          title="No videos yet"
+          description="Import videos from your device to start watching in ZabPlay."
+        />
+      ) : (
+        <div className="flex flex-col">
+          {videos.map((v) => (
+            <VideoCard key={v.id} item={v} />
+          ))}
+        </div>
+      )}
+      <AddMediaButton kind="video" label="Add videos" />
+    </AppShell>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
