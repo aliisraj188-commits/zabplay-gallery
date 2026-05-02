@@ -3,10 +3,11 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ArrowLeft, Play, Pause, SkipBack, SkipForward, Maximize, Settings,
   RotateCcw, RotateCw, MoreVertical, Repeat, Repeat1, Shuffle, Gauge,
-  Maximize2, Lock,
+  Maximize2, Lock, Headphones,
 } from "lucide-react";
 import { useMediaItem, useMediaItems } from "@/hooks/use-media-store";
-import { formatDuration } from "@/lib/media-store";
+import { formatDuration, prettyName } from "@/lib/media-store";
+import { audioPlayer } from "@/lib/audio-player";
 
 export const Route = createFileRoute("/play/$id")({
   component: PlayerPage,
@@ -195,7 +196,23 @@ function PlayerPage() {
                 <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10">
                   <ArrowLeft className="h-5 w-5 text-white" />
                 </Link>
-                <p className="line-clamp-1 flex-1 text-sm font-medium text-white">{item.name}</p>
+                <p className="line-clamp-1 flex-1 text-sm font-medium text-white">{prettyName(item.name)}</p>
+                <button
+                  onClick={() => {
+                    const v = videoRef.current;
+                    const startAt = v ? v.currentTime : 0;
+                    if (v) v.pause();
+                    // Hand off audio playback to the global audio player
+                    // so it keeps running when the screen is off / app is backgrounded.
+                    audioPlayer.playItem([item], item);
+                    setTimeout(() => { audioPlayer.seek(startAt); }, 200);
+                    router.navigate({ to: "/now-playing" });
+                  }}
+                  title="Listen as audio (background)"
+                  className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10"
+                >
+                  <Headphones className="h-5 w-5 text-white" />
+                </button>
                 <button onClick={() => { setShowSpeed((s) => !s); setShowMore(false); setShowAspect(false); setShowQuality(false); }} className="flex h-9 px-2 items-center justify-center rounded-full active:bg-white/10 text-white text-xs font-semibold">
                   {speed}x
                 </button>
@@ -321,7 +338,7 @@ function PlayerPage() {
 
       {/* Below player */}
       <div className="bg-background px-4 py-3">
-        <h1 className="text-base font-semibold text-foreground">{item.name}</h1>
+        <h1 className="text-base font-semibold text-foreground">{prettyName(item.name)}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
           ZabPlay • {formatDuration(item.duration)} • {quality} • {speed}x
         </p>
@@ -341,7 +358,7 @@ function PlayerPage() {
                       </span>
                     )}
                   </div>
-                  <p className="line-clamp-2 flex-1 text-[13px] font-medium text-foreground">{v.name}</p>
+                  <p className="line-clamp-2 flex-1 text-[13px] font-medium text-foreground">{prettyName(v.name)}</p>
                 </Link>
               </li>
             ))}

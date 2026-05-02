@@ -1,5 +1,5 @@
 import { Music2, Play } from "lucide-react";
-import { formatDuration, type MediaItem } from "@/lib/media-store";
+import { formatDuration, prettyName, type MediaItem } from "@/lib/media-store";
 
 export function MusicList({ items, onPlay }: { items: MediaItem[]; onPlay?: (i: MediaItem) => void }) {
   return (
@@ -14,7 +14,7 @@ export function MusicList({ items, onPlay }: { items: MediaItem[]; onPlay?: (i: 
             <Music2 className="h-5 w-5 text-brand" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{it.name}</p>
+            <p className="truncate text-sm font-medium text-foreground">{prettyName(it.name)}</p>
             <p className="text-xs text-muted-foreground">{formatDuration(it.duration) || "Audio"}</p>
           </div>
           <button

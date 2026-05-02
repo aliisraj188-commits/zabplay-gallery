@@ -83,9 +83,23 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/files' | '/music' | '/now-playing' | '/photos' | '/search' | '/play/$id'
+  fullPaths:
+    | '/'
+    | '/files'
+    | '/music'
+    | '/now-playing'
+    | '/photos'
+    | '/search'
+    | '/play/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/files' | '/music' | '/now-playing' | '/photos' | '/search' | '/play/$id'
+  to:
+    | '/'
+    | '/files'
+    | '/music'
+    | '/now-playing'
+    | '/photos'
+    | '/search'
+    | '/play/$id'
   id:
     | '__root__'
     | '/'

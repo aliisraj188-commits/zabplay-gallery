@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { MoreVertical, Film } from "lucide-react";
-import { formatDuration, type MediaItem } from "@/lib/media-store";
+import { formatDuration, prettyName, type MediaItem } from "@/lib/media-store";
 
 export function VideoCard({ item }: { item: MediaItem }) {
   return (
@@ -27,7 +27,7 @@ export function VideoCard({ item }: { item: MediaItem }) {
         <div className="h-9 w-9 flex-shrink-0 rounded-full bg-brand/20" />
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-[14px] font-medium leading-snug text-foreground">
-            {item.name}
+            {prettyName(item.name)}
           </p>
           <p className="mt-1 text-[12px] text-muted-foreground">
             ZabPlay • Local file

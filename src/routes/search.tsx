@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { ArrowLeft, Search as SearchIcon, X, Film, Music2, Image as ImageIcon, FileText } from "lucide-react";
 import { useMediaItems } from "@/hooks/use-media-store";
+import { prettyName } from "@/lib/media-store";
 
 export const Route = createFileRoute("/search")({
   component: SearchPage,
@@ -46,7 +47,7 @@ function SearchPage() {
           return (
             <li key={it.id} className="flex items-center gap-3 px-3 py-3">
               <Icon className="h-4 w-4 text-muted-foreground" />
-              <span className="truncate text-sm text-foreground">{it.name}</span>
+              <span className="truncate text-sm text-foreground">{prettyName(it.name)}</span>
             </li>
           );
         })}
