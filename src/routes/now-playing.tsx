@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { EQ_PRESETS } from "@/lib/audio-player";
-import { formatDuration } from "@/lib/media-store";
+import { formatDuration, prettyName } from "@/lib/media-store";
 
 export const Route = createFileRoute("/now-playing")({
   component: NowPlayingPage,
@@ -58,7 +58,7 @@ function NowPlayingPage() {
         <div className="relative mb-8 flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand/40 to-secondary shadow-2xl">
           <Music2 className={`h-32 w-32 text-brand ${player.playing ? "animate-pulse" : ""}`} />
         </div>
-        <h1 className="line-clamp-2 text-center text-xl font-semibold">{cur.name}</h1>
+        <h1 className="line-clamp-2 text-center text-xl font-semibold">{prettyName(cur.name)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">ZabPlay Audio</p>
 
         <div className="mt-8 w-full">
