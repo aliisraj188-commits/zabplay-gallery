@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Cast, Search, Play } from "lucide-react";
+import { Search, Play } from "lucide-react";
 
 export function AppHeader() {
   return (
@@ -12,17 +12,9 @@ export function AppHeader() {
           ZabPlay
         </span>
       </Link>
-      <div className="flex items-center gap-1">
-        <button className="flex h-10 w-10 items-center justify-center rounded-full active:bg-accent">
-          <Cast className="h-5 w-5 text-foreground" />
-        </button>
-        <Link to="/search" className="flex h-10 w-10 items-center justify-center rounded-full active:bg-accent">
-          <Search className="h-5 w-5 text-foreground" />
-        </Link>
-        <button className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-brand text-sm font-semibold text-brand-foreground">
-          R
-        </button>
-      </div>
+      <Link to="/search" className="flex h-10 w-10 items-center justify-center rounded-full active:bg-accent">
+        <Search className="h-5 w-5 text-foreground" />
+      </Link>
     </header>
   );
 }
