@@ -2,7 +2,8 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ArrowLeft, Play, Pause, SkipBack, SkipForward, Maximize, Settings,
-  RotateCcw, RotateCw, MoreVertical,
+  RotateCcw, RotateCw, MoreVertical, Repeat, Repeat1, Shuffle, Gauge,
+  Maximize2, Lock,
 } from "lucide-react";
 import { useMediaItem, useMediaItems } from "@/hooks/use-media-store";
 import { formatDuration } from "@/lib/media-store";
@@ -11,6 +12,9 @@ export const Route = createFileRoute("/play/$id")({
   component: PlayerPage,
   head: () => ({ meta: [{ title: "ZabPlay - Player" }] }),
 });
+
+type Aspect = "Fit" | "Fill" | "Stretch" | "16:9" | "4:3";
+type RepeatMode = "off" | "one" | "all";
 
 function PlayerPage() {
   const { id } = Route.useParams();
@@ -26,7 +30,16 @@ function PlayerPage() {
   const [showControls, setShowControls] = useState(true);
   const [seekHint, setSeekHint] = useState<"forward" | "backward" | null>(null);
   const [showQuality, setShowQuality] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [showSpeed, setShowSpeed] = useState(false);
+  const [showAspect, setShowAspect] = useState(false);
+  const [locked, setLocked] = useState(false);
   const [quality, setQuality] = useState<"Auto" | "1080p" | "720p" | "480p" | "360p">("Auto");
+  const [speed, setSpeed] = useState(1);
+  const [aspect, setAspect] = useState<Aspect>("Fit");
+  const [repeat, setRepeat] = useState<RepeatMode>("off");
+  const [autoplay, setAutoplay] = useState(true);
+  const [shuffle, setShuffle] = useState(false);
 
   const lastTap = useRef(0);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,7 +56,12 @@ function PlayerPage() {
 
   useEffect(() => { resetHide(); return () => { if (hideTimer.current) clearTimeout(hideTimer.current); }; }, [resetHide]);
 
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = speed;
+  }, [speed]);
+
   const togglePlay = () => {
+    if (locked) return;
     const v = videoRef.current; if (!v) return;
     if (v.paused) { v.play(); setPlaying(true); } else { v.pause(); setPlaying(false); }
     resetHide();
@@ -57,6 +75,7 @@ function PlayerPage() {
   };
 
   const onAreaTap = (side: "left" | "right") => {
+    if (locked) { setLocked(false); return; }
     const now = Date.now();
     if (now - lastTap.current < 300) {
       seekBy(side === "left" ? -10 : 10);
@@ -86,6 +105,33 @@ function PlayerPage() {
     else el.requestFullscreen?.();
   };
 
+  const cycleRepeat = () => {
+    const order: RepeatMode[] = ["off", "all", "one"];
+    setRepeat(order[(order.indexOf(repeat) + 1) % order.length]);
+  };
+
+  const handleEnded = () => {
+    if (repeat === "one") {
+      const v = videoRef.current; if (v) { v.currentTime = 0; v.play(); }
+      return;
+    }
+    if (!autoplay) { setPlaying(false); return; }
+    if (shuffle && allVideos.length > 1) {
+      const others = allVideos.filter((v) => v.id !== id);
+      const pick = others[Math.floor(Math.random() * others.length)];
+      router.navigate({ to: "/play/$id", params: { id: pick.id } });
+      return;
+    }
+    if (next) router.navigate({ to: "/play/$id", params: { id: next.id } });
+    else if (repeat === "all" && allVideos[0]) router.navigate({ to: "/play/$id", params: { id: allVideos[0].id } });
+  };
+
+  const videoObjectFit =
+    aspect === "Fit" ? "object-contain"
+    : aspect === "Fill" ? "object-cover"
+    : aspect === "Stretch" ? "object-fill"
+    : "object-contain";
+
   if (!item) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
@@ -105,39 +151,26 @@ function PlayerPage() {
           src={item.url}
           autoPlay
           playsInline
-          className="h-full w-full"
+          loop={repeat === "one"}
+          className={`h-full w-full ${videoObjectFit} ${aspect === "16:9" || aspect === "4:3" ? "" : ""}`}
+          style={aspect === "16:9" ? { aspectRatio: "16/9" } : aspect === "4:3" ? { aspectRatio: "4/3" } : undefined}
           onTimeUpdate={(e) => {
             const v = e.currentTarget;
             setProgress(v.duration ? (v.currentTime / v.duration) * 100 : 0);
           }}
-          onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+          onLoadedMetadata={(e) => { setDuration(e.currentTarget.duration); e.currentTarget.playbackRate = speed; }}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
-          onEnded={() => { if (next) router.navigate({ to: "/play/$id", params: { id: next.id } }); }}
+          onEnded={handleEnded}
         />
 
-        {/* Tap zones for double-tap seek */}
-        <button
-          aria-label="seek backward"
-          onClick={() => onAreaTap("left")}
-          className="absolute inset-y-0 left-0 w-1/3"
-        />
-        <button
-          aria-label="toggle play"
-          onClick={togglePlay}
-          className="absolute inset-y-0 left-1/3 w-1/3"
-        />
-        <button
-          aria-label="seek forward"
-          onClick={() => onAreaTap("right")}
-          className="absolute inset-y-0 right-0 w-1/3"
-        />
+        {/* Tap zones */}
+        <button aria-label="seek backward" onClick={() => onAreaTap("left")} className="absolute inset-y-0 left-0 w-1/3" />
+        <button aria-label="toggle play" onClick={() => locked ? setLocked(false) : togglePlay()} className="absolute inset-y-0 left-1/3 w-1/3" />
+        <button aria-label="seek forward" onClick={() => onAreaTap("right")} className="absolute inset-y-0 right-0 w-1/3" />
 
-        {/* Seek hint */}
         {seekHint && (
-          <div
-            className={`pointer-events-none absolute inset-y-0 ${seekHint === "backward" ? "left-0" : "right-0"} flex w-1/3 items-center justify-center bg-white/10`}
-          >
+          <div className={`pointer-events-none absolute inset-y-0 ${seekHint === "backward" ? "left-0" : "right-0"} flex w-1/3 items-center justify-center bg-white/10`}>
             <div className="flex flex-col items-center gap-1 text-white">
               {seekHint === "backward" ? <RotateCcw className="h-8 w-8" /> : <RotateCw className="h-8 w-8" />}
               <span className="text-xs font-semibold">10s</span>
@@ -145,100 +178,152 @@ function PlayerPage() {
           </div>
         )}
 
-        {/* Top bar */}
-        {showControls && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent p-3">
-            <div className="pointer-events-auto flex items-center gap-2">
-              <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10">
-                <ArrowLeft className="h-5 w-5 text-white" />
-              </Link>
-              <p className="line-clamp-1 flex-1 text-sm font-medium text-white">{item.name}</p>
-              <button onClick={() => setShowQuality((s) => !s)} className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10">
-                <Settings className="h-5 w-5 text-white" />
-              </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10">
-                <MoreVertical className="h-5 w-5 text-white" />
-              </button>
-            </div>
-          </div>
+        {locked && showControls && (
+          <button
+            onClick={() => setLocked(false)}
+            className="absolute left-3 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white"
+          >
+            <Lock className="h-5 w-5" />
+          </button>
         )}
 
-        {/* Center play controls */}
-        {showControls && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-8">
-            <button
-              disabled={!prev}
-              onClick={() => prev && router.navigate({ to: "/play/$id", params: { id: prev.id } })}
-              className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white disabled:opacity-30"
-            >
-              <SkipBack className="h-6 w-6 fill-current" strokeWidth={0} />
-            </button>
-            <button
-              onClick={togglePlay}
-              className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white"
-            >
-              {playing ? <Pause className="h-8 w-8 fill-current" strokeWidth={0} /> : <Play className="h-8 w-8 fill-current" strokeWidth={0} />}
-            </button>
-            <button
-              disabled={!next}
-              onClick={() => next && router.navigate({ to: "/play/$id", params: { id: next.id } })}
-              className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white disabled:opacity-30"
-            >
-              <SkipForward className="h-6 w-6 fill-current" strokeWidth={0} />
-            </button>
-          </div>
-        )}
-
-        {/* Bottom bar */}
-        {showControls && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-            <div className="pointer-events-auto">
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={0.1}
-                value={progress}
-                onChange={onSeek}
-                className="w-full accent-[oklch(0.62_0.24_27)]"
-              />
-              <div className="flex items-center justify-between text-[11px] text-white">
-                <span>{formatDuration((progress / 100) * duration)}</span>
-                <button onClick={enterFullscreen} className="flex h-8 w-8 items-center justify-center">
-                  <Maximize className="h-4 w-4" />
+        {!locked && showControls && (
+          <>
+            {/* Top bar */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent p-3">
+              <div className="pointer-events-auto flex items-center gap-1">
+                <Link to="/" className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10">
+                  <ArrowLeft className="h-5 w-5 text-white" />
+                </Link>
+                <p className="line-clamp-1 flex-1 text-sm font-medium text-white">{item.name}</p>
+                <button onClick={() => { setShowSpeed((s) => !s); setShowMore(false); setShowAspect(false); setShowQuality(false); }} className="flex h-9 px-2 items-center justify-center rounded-full active:bg-white/10 text-white text-xs font-semibold">
+                  {speed}x
                 </button>
-                <span>{formatDuration(duration)}</span>
+                <button onClick={() => { setShowQuality((s) => !s); setShowMore(false); setShowSpeed(false); setShowAspect(false); }} className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10">
+                  <Settings className="h-5 w-5 text-white" />
+                </button>
+                <button onClick={() => { setShowMore((s) => !s); setShowQuality(false); setShowSpeed(false); setShowAspect(false); }} className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/10">
+                  <MoreVertical className="h-5 w-5 text-white" />
+                </button>
               </div>
             </div>
-          </div>
+
+            {/* Center play controls */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-8">
+              <button disabled={!prev} onClick={() => prev && router.navigate({ to: "/play/$id", params: { id: prev.id } })} className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white disabled:opacity-30">
+                <SkipBack className="h-6 w-6 fill-current" strokeWidth={0} />
+              </button>
+              <button onClick={togglePlay} className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white">
+                {playing ? <Pause className="h-8 w-8 fill-current" strokeWidth={0} /> : <Play className="h-8 w-8 fill-current" strokeWidth={0} />}
+              </button>
+              <button disabled={!next} onClick={() => next && router.navigate({ to: "/play/$id", params: { id: next.id } })} className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white disabled:opacity-30">
+                <SkipForward className="h-6 w-6 fill-current" strokeWidth={0} />
+              </button>
+            </div>
+
+            {/* Bottom bar */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+              <div className="pointer-events-auto">
+                <input type="range" min={0} max={100} step={0.1} value={progress} onChange={onSeek} className="w-full accent-[oklch(0.62_0.24_27)]" />
+                <div className="flex items-center justify-between text-[11px] text-white">
+                  <span>{formatDuration((progress / 100) * duration)}</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setLocked(true)} className="flex h-8 w-8 items-center justify-center" title="Lock">
+                      <Lock className="h-4 w-4" />
+                    </button>
+                    <button onClick={cycleRepeat} className={`flex h-8 w-8 items-center justify-center ${repeat !== "off" ? "text-brand" : ""}`} title={`Repeat: ${repeat}`}>
+                      {repeat === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
+                    </button>
+                    <button onClick={() => setShuffle(!shuffle)} className={`flex h-8 w-8 items-center justify-center ${shuffle ? "text-brand" : ""}`} title="Shuffle">
+                      <Shuffle className="h-4 w-4" />
+                    </button>
+                    <button onClick={enterFullscreen} className="flex h-8 w-8 items-center justify-center">
+                      <Maximize className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <span>{formatDuration(duration)}</span>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Quality menu */}
         {showQuality && (
-          <div className="absolute right-3 top-14 z-20 w-40 overflow-hidden rounded-lg bg-black/90 text-white shadow-xl">
-            <div className="border-b border-white/10 px-3 py-2 text-[11px] font-semibold uppercase text-white/60">
-              Quality
-            </div>
+          <div className="absolute right-3 top-14 z-20 w-44 overflow-hidden rounded-lg bg-black/95 text-white shadow-xl">
+            <div className="border-b border-white/10 px-3 py-2 text-[11px] font-semibold uppercase text-white/60">Quality</div>
             {(["Auto", "1080p", "720p", "480p", "360p"] as const).map((q) => (
-              <button
-                key={q}
-                onClick={() => { setQuality(q); setShowQuality(false); }}
-                className="flex w-full items-center justify-between px-3 py-2.5 text-sm active:bg-white/10"
-              >
+              <button key={q} onClick={() => { setQuality(q); setShowQuality(false); }} className="flex w-full items-center justify-between px-3 py-2.5 text-sm active:bg-white/10">
                 <span>{q}</span>
-                {quality === q && <span className="text-brand">●</span>}
-                {q === "1080p" && <span className="ml-auto rounded bg-brand px-1 text-[9px] font-bold">HD</span>}
+                <span className="flex items-center gap-2">
+                  {q === "1080p" && <span className="rounded bg-brand px-1 text-[9px] font-bold">HD</span>}
+                  {quality === q && <span className="text-brand">●</span>}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Speed menu */}
+        {showSpeed && (
+          <div className="absolute right-12 top-14 z-20 w-40 overflow-hidden rounded-lg bg-black/95 text-white shadow-xl">
+            <div className="border-b border-white/10 px-3 py-2 text-[11px] font-semibold uppercase text-white/60 flex items-center gap-1"><Gauge className="h-3 w-3" /> Speed</div>
+            {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((s) => (
+              <button key={s} onClick={() => { setSpeed(s); setShowSpeed(false); }} className="flex w-full items-center justify-between px-3 py-2 text-sm active:bg-white/10">
+                <span>{s === 1 ? "Normal" : `${s}x`}</span>
+                {speed === s && <span className="text-brand">●</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* More menu */}
+        {showMore && (
+          <div className="absolute right-3 top-14 z-20 w-52 overflow-hidden rounded-lg bg-black/95 text-white shadow-xl">
+            <button onClick={() => { setShowAspect(true); setShowMore(false); }} className="flex w-full items-center justify-between px-3 py-2.5 text-sm active:bg-white/10">
+              <span className="flex items-center gap-2"><Maximize2 className="h-4 w-4" /> Aspect ratio</span>
+              <span className="text-[11px] text-white/60">{aspect}</span>
+            </button>
+            <button onClick={cycleRepeat} className="flex w-full items-center justify-between px-3 py-2.5 text-sm active:bg-white/10">
+              <span className="flex items-center gap-2">
+                {repeat === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
+                Repeat
+              </span>
+              <span className="text-[11px] text-white/60 capitalize">{repeat}</span>
+            </button>
+            <button onClick={() => setAutoplay((a) => !a)} className="flex w-full items-center justify-between px-3 py-2.5 text-sm active:bg-white/10">
+              <span>Autoplay next</span>
+              <span className={`text-[11px] ${autoplay ? "text-brand" : "text-white/60"}`}>{autoplay ? "On" : "Off"}</span>
+            </button>
+            <button onClick={() => { setShuffle((s) => !s); setShowMore(false); }} className="flex w-full items-center justify-between px-3 py-2.5 text-sm active:bg-white/10">
+              <span className="flex items-center gap-2"><Shuffle className="h-4 w-4" /> Shuffle</span>
+              <span className={`text-[11px] ${shuffle ? "text-brand" : "text-white/60"}`}>{shuffle ? "On" : "Off"}</span>
+            </button>
+            <button onClick={() => { setLocked(true); setShowMore(false); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-sm active:bg-white/10">
+              <Lock className="h-4 w-4" /> Lock screen
+            </button>
+          </div>
+        )}
+
+        {/* Aspect submenu */}
+        {showAspect && (
+          <div className="absolute right-3 top-14 z-20 w-44 overflow-hidden rounded-lg bg-black/95 text-white shadow-xl">
+            <div className="border-b border-white/10 px-3 py-2 text-[11px] font-semibold uppercase text-white/60">Aspect ratio</div>
+            {(["Fit", "Fill", "Stretch", "16:9", "4:3"] as Aspect[]).map((a) => (
+              <button key={a} onClick={() => { setAspect(a); setShowAspect(false); }} className="flex w-full items-center justify-between px-3 py-2.5 text-sm active:bg-white/10">
+                <span>{a}</span>
+                {aspect === a && <span className="text-brand">●</span>}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Below player: title + up next */}
+      {/* Below player */}
       <div className="bg-background px-4 py-3">
         <h1 className="text-base font-semibold text-foreground">{item.name}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          ZabPlay • {formatDuration(item.duration)} • {quality}
+          ZabPlay • {formatDuration(item.duration)} • {quality} • {speed}x
         </p>
       </div>
       {allVideos.length > 1 && (
