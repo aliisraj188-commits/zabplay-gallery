@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as PhotosRouteImport } from './routes/photos'
+import { Route as NowPlayingRouteImport } from './routes/now-playing'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as FilesRouteImport } from './routes/files'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,6 +25,11 @@ const SearchRoute = SearchRouteImport.update({
 const PhotosRoute = PhotosRouteImport.update({
   id: '/photos',
   path: '/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NowPlayingRoute = NowPlayingRouteImport.update({
+  id: '/now-playing',
+  path: '/now-playing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MusicRoute = MusicRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/files': typeof FilesRoute
   '/music': typeof MusicRoute
+  '/now-playing': typeof NowPlayingRoute
   '/photos': typeof PhotosRoute
   '/search': typeof SearchRoute
   '/play/$id': typeof PlayIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/files': typeof FilesRoute
   '/music': typeof MusicRoute
+  '/now-playing': typeof NowPlayingRoute
   '/photos': typeof PhotosRoute
   '/search': typeof SearchRoute
   '/play/$id': typeof PlayIdRoute
@@ -68,20 +76,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/files': typeof FilesRoute
   '/music': typeof MusicRoute
+  '/now-playing': typeof NowPlayingRoute
   '/photos': typeof PhotosRoute
   '/search': typeof SearchRoute
   '/play/$id': typeof PlayIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/files' | '/music' | '/photos' | '/search' | '/play/$id'
+  fullPaths: '/' | '/files' | '/music' | '/now-playing' | '/photos' | '/search' | '/play/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/files' | '/music' | '/photos' | '/search' | '/play/$id'
+  to: '/' | '/files' | '/music' | '/now-playing' | '/photos' | '/search' | '/play/$id'
   id:
     | '__root__'
     | '/'
     | '/files'
     | '/music'
+    | '/now-playing'
     | '/photos'
     | '/search'
     | '/play/$id'
@@ -91,6 +101,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FilesRoute: typeof FilesRoute
   MusicRoute: typeof MusicRoute
+  NowPlayingRoute: typeof NowPlayingRoute
   PhotosRoute: typeof PhotosRoute
   SearchRoute: typeof SearchRoute
   PlayIdRoute: typeof PlayIdRoute
@@ -110,6 +121,13 @@ declare module '@tanstack/react-router' {
       path: '/photos'
       fullPath: '/photos'
       preLoaderRoute: typeof PhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/now-playing': {
+      id: '/now-playing'
+      path: '/now-playing'
+      fullPath: '/now-playing'
+      preLoaderRoute: typeof NowPlayingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/music': {
@@ -147,6 +165,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FilesRoute: FilesRoute,
   MusicRoute: MusicRoute,
+  NowPlayingRoute: NowPlayingRoute,
   PhotosRoute: PhotosRoute,
   SearchRoute: SearchRoute,
   PlayIdRoute: PlayIdRoute,

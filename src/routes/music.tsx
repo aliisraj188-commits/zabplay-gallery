@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Music2, Pause, Play } from "lucide-react";
 import { AppShell } from "@/components/zab/AppShell";
 import { MusicList } from "@/components/zab/MusicList";
 import { AddMediaButton } from "@/components/zab/AddMediaButton";
 import { EmptyState } from "@/components/zab/EmptyState";
 import { useMediaItems } from "@/hooks/use-media-store";
+import { useAudioPlayer } from "@/hooks/use-audio-player";
 import type { MediaItem } from "@/lib/media-store";
 
 export const Route = createFileRoute("/music")({
@@ -15,20 +15,13 @@ export const Route = createFileRoute("/music")({
 
 function MusicPage() {
   const items = useMediaItems("music");
-  const [current, setCurrent] = useState<MediaItem | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const player = useAudioPlayer();
+  const router = useRouter();
+  const current = player.current();
 
   const play = (i: MediaItem) => {
-    setCurrent(i);
-    setPlaying(true);
-    setTimeout(() => audioRef.current?.play(), 50);
-  };
-
-  const toggle = () => {
-    if (!audioRef.current) return;
-    if (playing) audioRef.current.pause(); else audioRef.current.play();
-    setPlaying(!playing);
+    player.playItem(items, i);
+    router.navigate({ to: "/now-playing" });
   };
 
   return (
@@ -39,19 +32,28 @@ function MusicPage() {
         <MusicList items={items} onPlay={play} />
       )}
       {current && (
-        <div className="fixed inset-x-0 bottom-14 z-30 flex items-center gap-3 border-t border-border bg-card px-3 py-2.5">
+        <button
+          onClick={() => router.navigate({ to: "/now-playing" })}
+          className="fixed inset-x-0 bottom-14 z-30 flex w-full items-center gap-3 border-t border-border bg-card px-3 py-2.5 text-left"
+        >
           <div className="flex h-10 w-10 items-center justify-center rounded bg-secondary">
             <Music2 className="h-5 w-5 text-brand" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">{current.name}</p>
-            <p className="text-[11px] text-muted-foreground">Now playing</p>
+            <p className="text-[11px] text-muted-foreground">
+              {player.playing ? "Now playing" : "Paused"}
+            </p>
           </div>
-          <button onClick={toggle} className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-brand-foreground">
-            {playing ? <Pause className="h-4 w-4 fill-current" strokeWidth={0} /> : <Play className="h-4 w-4 fill-current" strokeWidth={0} />}
-          </button>
-          <audio ref={audioRef} src={current.url} onEnded={() => setPlaying(false)} />
-        </div>
+          <span
+            onClick={(e) => { e.stopPropagation(); player.toggle(); }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-brand-foreground"
+          >
+            {player.playing
+              ? <Pause className="h-4 w-4 fill-current" strokeWidth={0} />
+              : <Play className="h-4 w-4 fill-current" strokeWidth={0} />}
+          </span>
+        </button>
       )}
       <AddMediaButton kind="music" label="Add music" />
     </AppShell>
