@@ -61,6 +61,29 @@ function PlayerPage() {
     if (videoRef.current) videoRef.current.playbackRate = speed;
   }, [speed]);
 
+  // Auto-fullscreen on landscape rotation (4K/big screen feel)
+  useEffect(() => {
+    const handleOrientation = () => {
+      const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+      const el = containerRef.current;
+      if (!el) return;
+      if (isLandscape && !document.fullscreenElement) {
+        el.requestFullscreen?.().catch(() => {});
+        // @ts-ignore
+        screen.orientation?.lock?.("landscape").catch(() => {});
+      } else if (!isLandscape && document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    };
+    const mq = window.matchMedia("(orientation: landscape)");
+    mq.addEventListener?.("change", handleOrientation);
+    window.addEventListener("orientationchange", handleOrientation);
+    return () => {
+      mq.removeEventListener?.("change", handleOrientation);
+      window.removeEventListener("orientationchange", handleOrientation);
+    };
+  }, []);
+
   const togglePlay = () => {
     if (locked) return;
     const v = videoRef.current; if (!v) return;
