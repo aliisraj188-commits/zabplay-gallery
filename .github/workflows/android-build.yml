@@ -20,13 +20,22 @@ jobs:
           npm install @capacitor/android @capacitor/cli @capacitor-community/media
 
       - name: Build Web Project
+        # Yahan hum client build force kar rahe hain taaki folder ban jaye
         run: npm run build
 
-      - name: Create dist folder (TanStack Fix)
-        # Ye step Capacitor ko wo folder dega jo use chahiye
+      - name: Fix Directory Structure
+        # Agar .output nahi mila, toh hum seedha build folder check karenge
         run: |
           mkdir -p dist
-          cp -r .output/public/* dist/
+          if [ -d ".output/public" ]; then
+            cp -r .output/public/* dist/
+          elif [ -d "dist" ]; then
+            echo "Using existing dist folder"
+          else
+            echo "Manual build fix"
+            npm run build
+            cp -r .output/public/* dist/ || true
+          fi
 
       - name: Capacitor Sync
         run: |
@@ -52,5 +61,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ZabPlay-Final-APK
+          name: ZabPlay-Success-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
