@@ -374,14 +374,25 @@ function PlayerPage() {
       </div>
 
       {/* Below player */}
-      <div className="bg-background px-4 py-3">
+      <div className="px-4 py-3">
         <h1 className="text-base font-semibold text-foreground">{prettyName(item.name)}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
           ZabPlay • {formatDuration(item.duration)} • {quality} • {speed}x
         </p>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="h-9 w-9 overflow-hidden rounded-full bg-tiranga-soft p-[2px]">
+            <span className="flex h-full w-full items-center justify-center rounded-full bg-background/80">
+              <img src={logo} alt="ZabPlay" className="h-6 w-6 object-contain" />
+            </span>
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">ZabPlay</p>
+            <p className="text-[11px] text-muted-foreground">Your channel</p>
+          </div>
+        </div>
       </div>
       {allVideos.length > 1 && (
-        <div className="bg-background px-3 pb-24">
+        <div className="px-3 pb-24">
           <h2 className="px-1 py-2 text-sm font-semibold text-foreground">All videos</h2>
           <ul className="space-y-2">
             {allVideos.map((v) => {
