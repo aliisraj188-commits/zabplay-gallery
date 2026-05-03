@@ -14,36 +14,33 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Dependencies
+      - name: Install & Fix Dependencies
         run: |
           npm install
-          npm install @tanstack/router-plugin @capacitor/android @capacitor/cli
+          # Missing plugins ko auto-install karna
+          npm install @tanstack/router-plugin @capacitor/android @capacitor/cli @capacitor/core
 
       - name: Build Project
         run: npm run build
 
-      - name: Ultimate Directory Fix
+      - name: Auto-Fix Design & Paths
+        # Ye step bina aapke kahe sab kuch sahi jagah set kar dega
         run: |
           mkdir -p dist
-          # Build files ko sahi jagah move karna
-          if [ -d ".output/public" ]; then
-            cp -r .output/public/* dist/
-          elif [ -d ".vinxi/build/client" ]; then
-            cp -r .vinxi/build/client/* dist/
-          elif [ -d "build" ]; then
-            cp -r build/* dist/
-          fi
+          # 1. Build folder dhoondna
+          if [ -d ".output/public" ]; then cp -r .output/public/* dist/; 
+          elif [ -d ".vinxi/build/client" ]; then cp -r .vinxi/build/client/* dist/;
+          elif [ -d "build" ]; then cp -r build/* dist/; fi
           
-          # DESIGN FIX: index.html ke andar ke paths ko mobile-friendly banana
+          # 2. Design/CSS paths fix karna (Jo blank screen ki wajah hai)
           if [ -f "dist/index.html" ]; then
             sed -i 's/href="\//href=".//g' dist/index.html
             sed -i 's/src="\//src=".//g' dist/index.html
-            echo "Design paths fixed for mobile"
           fi
 
       - name: Capacitor Sync
         run: |
-          npx cap add android || echo "Android folder exists"
+          npx cap add android || echo "Folder exists"
           npx cap sync android
 
       - name: Setup Java
@@ -61,5 +58,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ZabPlay-Final-APK
+          name: ZabPlay-Final-Fixed-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
