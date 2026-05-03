@@ -1,5 +1,8 @@
-import { createRouter, useRouter } from "@tanstack/react-router";
+import { createRouter, useRouter, createHashHistory } from "@tanstack/react-router"; // createHashHistory joda
 import { routeTree } from "./routeTree.gen";
+
+// Hash history mobile ke liye sabse best hai taaki design load ho sake
+const hashHistory = createHashHistory();
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
@@ -42,8 +45,9 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
           >
             Try again
           </button>
+          {/* href ko '#' ke sath fix kiya mobile navigation ke liye */}
           <a
-            href="/"
+            href="#/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Go home
@@ -57,6 +61,7 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 export const getRouter = () => {
   const router = createRouter({
     routeTree,
+    history: hashHistory, // Ye line design aur routing ko mobile par chala degi
     context: {},
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
