@@ -8,6 +8,7 @@ import {
 import { useMediaItem, useMediaItems } from "@/hooks/use-media-store";
 import { formatDuration, prettyName } from "@/lib/media-store";
 import { audioPlayer } from "@/lib/audio-player";
+import logo from "@/assets/zabplay-logo.png";
 
 export const Route = createFileRoute("/play/$id")({
   component: PlayerPage,
@@ -168,7 +169,15 @@ function PlayerPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-black">
+    <div
+      className="flex min-h-screen flex-col"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 20% 0%, oklch(0.74 0.18 55 / 0.35), transparent 55%)," +
+          "radial-gradient(circle at 80% 100%, oklch(0.55 0.16 150 / 0.40), transparent 55%)," +
+          "linear-gradient(180deg, oklch(0.20 0.05 60), oklch(0.18 0.03 90), oklch(0.20 0.06 150))",
+      }}
+    >
       <div ref={containerRef} className="relative aspect-video w-full bg-black select-none">
         <video
           ref={videoRef}
@@ -187,6 +196,11 @@ function PlayerPage() {
           onPause={() => setPlaying(false)}
           onEnded={handleEnded}
         />
+
+        {/* Logo watermark */}
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 p-[2px] backdrop-blur-sm opacity-80">
+          <img src={logo} alt="ZabPlay" className="h-full w-full rounded-full object-contain" />
+        </div>
 
         {/* Tap zones */}
         <button aria-label="seek backward" onClick={() => onAreaTap("left")} className="absolute inset-y-0 left-0 w-1/3" />
@@ -360,14 +374,25 @@ function PlayerPage() {
       </div>
 
       {/* Below player */}
-      <div className="bg-background px-4 py-3">
+      <div className="px-4 py-3">
         <h1 className="text-base font-semibold text-foreground">{prettyName(item.name)}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
           ZabPlay • {formatDuration(item.duration)} • {quality} • {speed}x
         </p>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="h-9 w-9 overflow-hidden rounded-full bg-tiranga-soft p-[2px]">
+            <span className="flex h-full w-full items-center justify-center rounded-full bg-background/80">
+              <img src={logo} alt="ZabPlay" className="h-6 w-6 object-contain" />
+            </span>
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">ZabPlay</p>
+            <p className="text-[11px] text-muted-foreground">Your channel</p>
+          </div>
+        </div>
       </div>
       {allVideos.length > 1 && (
-        <div className="bg-background px-3 pb-24">
+        <div className="px-3 pb-24">
           <h2 className="px-1 py-2 text-sm font-semibold text-foreground">All videos</h2>
           <ul className="space-y-2">
             {allVideos.map((v) => {

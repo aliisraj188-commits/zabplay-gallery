@@ -146,24 +146,11 @@ export function formatDuration(s?: number) {
 // the cleanup leaves nothing meaningful.
 export function prettyName(name: string): string {
   if (!name) return "";
-  // strip extension
+  // strip extension only — keep the real gallery title intact
   const dot = name.lastIndexOf(".");
   let base = dot > 0 ? name.slice(0, dot) : name;
-  // Common camera/whatsapp prefixes
-  const prefixed = base.match(/^(VID|IMG|PXL|MVI|DSC|AUD|REC|VIDEO|PHOTO|SCREENSHOT|SCR|WA)[-_ ]?(.*)$/i);
-  if (prefixed) base = prefixed[2] || base;
-  // Drop runs of 6+ digits (timestamps, dates) and trailing -WA0001 etc.
-  let cleaned = base
-    .replace(/[-_ ]?WA\d+/gi, "")
-    .replace(/\d{6,}/g, " ")
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!cleaned) {
-    cleaned = (dot > 0 ? name.slice(0, dot) : name).replace(/[-_]+/g, " ").trim();
-  }
-  // Capitalise first letter of each word
-  cleaned = cleaned.replace(/\b\w/g, (c) => c.toUpperCase());
+  // Replace separators with spaces for readability, keep numbers/dates
+  let cleaned = base.replace(/[_]+/g, " ").replace(/\s+/g, " ").trim();
   return cleaned || name;
 }
 
