@@ -20,42 +20,71 @@ jobs:
         with:
           bun-version: latest
 
-      # ==================== STEP 3: Install Dependencies ====================
+      # ==================== STEP 3: Fix Package.json Version Error ====================
+      - name: Fix TanStack Version Error
+        run: |
+          echo "🔧 Fixing @tanstack/router-vite-plugin version..."
+          
+          # package.json mein se exact version hatao aur latest lagao
+          # Ya phir poora tanstack section update karo
+          
+          # Method 1: package.json mein version fix karo
+          if grep -q "@tanstack/router-vite-plugin" package.json; then
+            echo "📦 Found router-vite-plugin in package.json"
+            
+            # Version ^1.167.10 ko latest mein convert karo
+            sed -i 's/"@tanstack\/router-vite-plugin": "\^1.167.10"/"@tanstack\/router-vite-plugin": "latest"/g' package.json
+            sed -i 's/"@tanstack\/router-vite-plugin": "\^1.167.10"/"@tanstack\/router-vite-plugin": "latest"/g' package.json
+            
+            # Agar koi aur format ho toh bhi catch karo
+            sed -i 's/"@tanstack\/router-vite-plugin": ".*"/"@tanstack\/router-vite-plugin": "latest"/g' package.json
+            
+            echo "✅ Version fixed to 'latest'"
+            cat package.json | grep -A1 -B1 "router-vite-plugin" || true
+          fi
+          
+          # Lock files delete karo taaki fresh install ho
+          echo "🗑️ Removing lock files..."
+          rm -f bun.lockb
+          rm -f package-lock.json
+          rm -rf node_modules
+
+      # ==================== STEP 4: Install Dependencies ====================
       - name: Install Dependencies
         run: |
           echo "📦 Installing with Bun..."
-          bun install --frozen-lockfile || bun install
           
-          # Capacitor packages ensure karo
-          bun add @capacitor/android @capacitor/cli @capacitor/core
+          # Fresh install without lock file
+          bun install || {
+            echo "⚠️ First attempt failed, trying with --no-save..."
+            bun install --no-save || {
+              echo "⚠️ Trying npm fallback..."
+              npm install --legacy-peer-deps
+            }
+          }
+          
+          # Capacitor packages install karo
+          bun add @capacitor/android @capacitor/cli @capacitor/core || \
+          npm install @capacitor/android @capacitor/cli @capacitor/core --legacy-peer-deps
 
-      # ==================== STEP 4: Build Project ====================
+      # ==================== STEP 5: Build Project ====================
       - name: Build Project
         run: |
-          echo "🔨 Building with Bun..."
-          bun run build
+          echo "🔨 Building..."
+          bun run build || npm run build
 
-      # ==================== STEP 5: Auto Detect & Copy Build Output ====================
+      # ==================== STEP 6: Auto Detect Build Output ====================
       - name: Auto Detect Build Output
         run: |
-          echo "🔍 Searching for build output folders..."
+          echo "🔍 Searching for build output..."
           
-          # TanStack Start / Vinxi ke liye common folders
-          folders=(
-            ".output/public"
-            "dist"
-            ".vinxi/build/client"
-            "build"
-            "out"
-            "public"
-          )
-          
+          folders=(".output/public" "dist" ".vinxi/build/client" "build" "out")
           SOURCE_DIR=""
           FOUND=false
           
           for folder in "${folders[@]}"; do
             if [ -d "$folder" ] && [ "$(ls -A $folder 2>/dev/null)" ]; then
-              echo "✅ Found build output: $folder"
+              echo "✅ Found: $folder"
               SOURCE_DIR="$folder"
               FOUND=true
               break
@@ -63,65 +92,37 @@ jobs:
           done
           
           if [ "$FOUND" = false ]; then
-            echo "❌ ERROR: No build output folder found!"
-            echo "📂 Current directory contents:"
+            echo "❌ No build output found!"
             ls -la
-            echo "🔍 Searching all folders..."
-            find . -maxdepth 2 -type d | head -20
+            find . -maxdepth 3 -type d | head -30
             exit 1
           fi
           
-          # Capacitor ke liye dist folder banao
           mkdir -p dist
-          
-          # Files copy karo
-          echo "📁 Copying from $SOURCE_DIR to dist/"
           cp -r "$SOURCE_DIR"/* dist/
-          
-          # Verify
-          echo "📂 Dist folder contents:"
-          ls -la dist/
-          echo "📄 Files count: $(find dist -type f | wc -l)"
+          echo "📁 Copied $(find dist -type f | wc -l) files to dist/"
 
-      # ==================== STEP 6: Fix Paths for Mobile ====================
+      # ==================== STEP 7: Fix Paths ====================
       - name: Fix Paths for Mobile
         run: |
           if [ -f "dist/index.html" ]; then
-            echo "🔧 Fixing absolute paths to relative paths..."
             sed -i 's|href="/|href="./|g' dist/index.html
             sed -i 's|src="/|src="./|g' dist/index.html
-            sed -i 's|url(/|url(./|g' dist/index.html
-            echo "✅ Paths fixed in index.html"
-            
-            # CSS files mein bhi fix karo
-            find dist -name "*.css" -exec sed -i 's|url(/|url(./|g' {} \; 2>/dev/null || true
-          else
-            echo "⚠️ No index.html found in dist"
+            echo "✅ Paths fixed"
           fi
 
-      # ==================== STEP 7: Capacitor Sync ====================
+      # ==================== STEP 8: Capacitor Sync ====================
       - name: Capacitor Sync
         run: |
-          # capacitor.config.ts se webDir check karo
-          echo "📋 Capacitor config:"
-          cat capacitor.config.ts 2>/dev/null || cat capacitor.config.json 2>/dev/null || echo "No config found"
-          
-          # Android platform add karo
-          bunx cap add android || echo "⚠️ Android already exists or error"
-          
-          # Sync karo
-          bunx cap sync android
+          bunx cap add android 2>/dev/null || echo "Android exists"
+          bunx cap sync android || npx cap sync android
 
-      # ==================== STEP 8: Setup Java ====================
+      # ==================== STEP 9: Setup Java ====================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-
-      # ==================== STEP 9: Setup Android SDK ====================
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
 
       # ==================== STEP 10: Build APK ====================
       - name: Build APK
@@ -136,9 +137,4 @@ jobs:
         with:
           name: ZabPlay-APK-${{ github.run_number }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: warn
-
-      # ==================== STEP 12: Success Message ====================
-      - name: Build Success
-        if: success()
-        run: echo "🎉 APK Build Successful! Download from Artifacts."
+      
