@@ -8,6 +8,7 @@ import {
 import { useMediaItem, useMediaItems } from "@/hooks/use-media-store";
 import { formatDuration, prettyName } from "@/lib/media-store";
 import { audioPlayer } from "@/lib/audio-player";
+import logo from "@/assets/zabplay-logo.png";
 
 export const Route = createFileRoute("/play/$id")({
   component: PlayerPage,
