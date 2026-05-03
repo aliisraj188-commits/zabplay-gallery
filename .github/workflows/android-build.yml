@@ -14,25 +14,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install & Fix Dependencies
+      - name: Install & Repair Dependencies
+        # Maine 'legacy-peer-deps' dala hai taaki version ka koi error na aaye
         run: |
-          npm install
-          # Missing plugins ko auto-install karna
-          npm install @tanstack/router-plugin @capacitor/android @capacitor/cli @capacitor/core
+          npm install --legacy-peer-deps
+          npm install @capacitor/android @capacitor/cli @capacitor/core --legacy-peer-deps
 
       - name: Build Project
         run: npm run build
 
-      - name: Auto-Fix Design & Paths
-        # Ye step bina aapke kahe sab kuch sahi jagah set kar dega
+      - name: Automatic Path & Design Fixer
+        # Ye step khud dhoondhega ki build kahan hai aur use 'dist' mein daal dega
         run: |
           mkdir -p dist
-          # 1. Build folder dhoondna
+          # Build files scan karna
           if [ -d ".output/public" ]; then cp -r .output/public/* dist/; 
           elif [ -d ".vinxi/build/client" ]; then cp -r .vinxi/build/client/* dist/;
-          elif [ -d "build" ]; then cp -r build/* dist/; fi
+          elif [ -d "build" ]; then cp -r build/* dist/; 
+          elif [ -d "out" ]; then cp -r out/* dist/; fi
           
-          # 2. Design/CSS paths fix karna (Jo blank screen ki wajah hai)
+          # Design Fix: Mobile ke liye raste (paths) sahi karna
           if [ -f "dist/index.html" ]; then
             sed -i 's/href="\//href=".//g' dist/index.html
             sed -i 's/src="\//src=".//g' dist/index.html
@@ -40,7 +41,7 @@ jobs:
 
       - name: Capacitor Sync
         run: |
-          npx cap add android || echo "Folder exists"
+          npx cap add android || echo "Android folder exists"
           npx cap sync android
 
       - name: Setup Java
@@ -58,5 +59,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ZabPlay-Final-Fixed-APK
+          name: ZabPlay-Final-Auto-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
