@@ -197,6 +197,11 @@ function PlayerPage() {
           onEnded={handleEnded}
         />
 
+        {/* Logo watermark */}
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 p-[2px] backdrop-blur-sm opacity-80">
+          <img src={logo} alt="ZabPlay" className="h-full w-full rounded-full object-contain" />
+        </div>
+
         {/* Tap zones */}
         <button aria-label="seek backward" onClick={() => onAreaTap("left")} className="absolute inset-y-0 left-0 w-1/3" />
         <button aria-label="toggle play" onClick={() => locked ? setLocked(false) : togglePlay()} className="absolute inset-y-0 left-1/3 w-1/3" />
