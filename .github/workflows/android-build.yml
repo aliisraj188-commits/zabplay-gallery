@@ -22,29 +22,22 @@ jobs:
       - name: Build Web Project
         run: npm run build
 
-      - name: Force Directory for Capacitor
-        # Ye step pakka karega ki files 'dist' folder mein hi hon
+      - name: TanStack Directory Fix
+        # Ye step sabse zaroori hai: Ye folder ko rename kar dega taaki Capacitor ko files mil jayein
         run: |
           if [ -d ".output/public" ]; then
-            mkdir -p dist
-            cp -r .output/public/* dist/
-            echo "Copied from .output to dist"
-          elif [ -d "dist" ]; then
-            echo "Dist already exists"
+            rm -rf dist
+            mv .output/public dist
+            echo "Fixed: .output/public moved to dist"
           else
-            mkdir -p dist
-            touch dist/index.html
-            echo "Created empty dist to prevent crash"
+            echo "Checking if dist already exists"
+            ls -d dist || mkdir dist
           fi
 
       - name: Capacitor Sync
         run: |
           npx cap add android || echo "Android exists"
           npx cap sync android
-
-      - name: Add Permissions
-        run: |
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />' android/app/src/main/AndroidManifest.xml
 
       - name: Setup Java
         uses: actions/setup-java@v4
