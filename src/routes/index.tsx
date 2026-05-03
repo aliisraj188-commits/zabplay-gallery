@@ -22,7 +22,7 @@ function VideosPage() {
           description="Import videos from your device to start watching in ZabPlay."
         />
       ) : (
-        <div className="flex flex-col">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 px-3 py-2">
           {videos.map((v) => (
             <VideoCard key={v.id} item={v} />
           ))}
