@@ -3,9 +3,11 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.israj.zabplay',
   appName: 'ZabPlay',
-  webDir: 'dist', // Sirf 'dist' hi rehne dena
+  webDir: 'dist', 
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    // Ye line images aur media files ko bina kisi error ke load karne mein madad karegi
+    cleartext: true 
   }
 };
 
