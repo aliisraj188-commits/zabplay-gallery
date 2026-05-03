@@ -1,17 +1,13 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.israj.zabplay', // Ye aapke app ki unique ID hai
-  appName: 'ZabPlay',         // Ye naam phone ki screen par dikhega
-  webDir: 'dist',             // Vite build isi folder mein banti hai
-  bundledWebRuntime: false,
+  appId: 'com.israj.zabplay',
+  appName: 'ZabPlay',
+  // Is line ko maine badal diya hai fix karne ke liye:
+  webDir: '.output/public', 
   server: {
-    androidScheme: 'https'    // Naye Android phones ke liye security system
-  },
-  plugins: {
-    // Gallery aur Media scan karne ke liye yahan extra settings ki zarurat nahi hoti
+    androidScheme: 'https'
   }
 };
 
 export default config;
-
