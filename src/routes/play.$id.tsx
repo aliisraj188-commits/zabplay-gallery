@@ -169,7 +169,15 @@ function PlayerPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-black">
+    <div
+      className="flex min-h-screen flex-col"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 20% 0%, oklch(0.74 0.18 55 / 0.35), transparent 55%)," +
+          "radial-gradient(circle at 80% 100%, oklch(0.55 0.16 150 / 0.40), transparent 55%)," +
+          "linear-gradient(180deg, oklch(0.20 0.05 60), oklch(0.18 0.03 90), oklch(0.20 0.06 150))",
+      }}
+    >
       <div ref={containerRef} className="relative aspect-video w-full bg-black select-none">
         <video
           ref={videoRef}
