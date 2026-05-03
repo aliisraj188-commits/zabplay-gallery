@@ -367,24 +367,38 @@ function PlayerPage() {
         </p>
       </div>
       {allVideos.length > 1 && (
-        <div className="bg-background px-3 pb-6">
-          <h2 className="px-1 py-2 text-sm font-semibold text-foreground">Up next</h2>
+        <div className="bg-background px-3 pb-24">
+          <h2 className="px-1 py-2 text-sm font-semibold text-foreground">All videos</h2>
           <ul className="space-y-2">
-            {allVideos.filter((v) => v.id !== id).slice(0, 6).map((v) => (
-              <li key={v.id}>
-                <Link to="/play/$id" params={{ id: v.id }} className="flex gap-3 active:opacity-70">
-                  <div className="relative aspect-video w-32 flex-shrink-0 overflow-hidden rounded bg-secondary">
-                    {v.thumbnail && <img src={v.thumbnail} alt={v.name} className="h-full w-full object-cover" />}
-                    {v.duration && (
-                      <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-[10px] text-white">
-                        {formatDuration(v.duration)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="line-clamp-2 flex-1 text-[13px] font-medium text-foreground">{prettyName(v.name)}</p>
-                </Link>
-              </li>
-            ))}
+            {allVideos.map((v) => {
+              const isCurrent = v.id === id;
+              return (
+                <li key={v.id}>
+                  <Link
+                    to="/play/$id"
+                    params={{ id: v.id }}
+                    className={`flex gap-3 rounded-lg p-1 active:opacity-70 ${isCurrent ? "bg-brand/15 ring-1 ring-brand/50" : ""}`}
+                  >
+                    <div className="relative aspect-video w-32 flex-shrink-0 overflow-hidden rounded bg-secondary">
+                      {v.thumbnail && <img src={v.thumbnail} alt={v.name} className="h-full w-full object-cover" />}
+                      {v.duration && (
+                        <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-[10px] text-white">
+                          {formatDuration(v.duration)}
+                        </span>
+                      )}
+                      {isCurrent && (
+                        <span className="absolute left-1 top-1 rounded bg-brand px-1.5 py-0.5 text-[9px] font-bold text-brand-foreground">
+                          NOW
+                        </span>
+                      )}
+                    </div>
+                    <p className={`line-clamp-2 flex-1 text-[13px] font-medium ${isCurrent ? "text-brand" : "text-foreground"}`}>
+                      {prettyName(v.name)}
+                    </p>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
