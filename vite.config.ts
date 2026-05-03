@@ -1,20 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
-
-// @ts-ignore
-import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 export default defineConfig({
-  // Ye line mobile par design aur CSS load karne ke liye sabse zaroori hai
+  // Mobile par CSS aur Images load karne ke liye zaroori fix
   base: './', 
   plugins: [
     tsconfigPaths(),
+    TanStackRouterVite(), // Designing handle karne ke liye
     react(),
-    TanStackRouterVite(),
   ],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // Ye pakka karega ki saari designing ek hi jagah bundle ho jaye
+    assetsDir: 'assets',
   },
 })
