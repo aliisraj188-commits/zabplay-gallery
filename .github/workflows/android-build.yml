@@ -15,31 +15,35 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install @tanstack/router-plugin @capacitor/android @capacitor/cli
 
       - name: Build Project
         run: npm run build
 
       - name: Ultimate Directory Fix
-        # Ye step har kone se build files dhoond kar 'dist' mein dalega
         run: |
           mkdir -p dist
+          # Build files ko sahi jagah move karna
           if [ -d ".output/public" ]; then
             cp -r .output/public/* dist/
           elif [ -d ".vinxi/build/client" ]; then
-            cp -r ".vinxi/build/client/"* dist/
+            cp -r .vinxi/build/client/* dist/
           elif [ -d "build" ]; then
             cp -r build/* dist/
           fi
-          # Capacitor ki tasalli ke liye agar kuch na mile toh dummy file
-          if [ ! -f "dist/index.html" ]; then
-            echo "<html><body>ZabPlay Loading...</body></html>" > dist/index.html
+          
+          # DESIGN FIX: index.html ke andar ke paths ko mobile-friendly banana
+          if [ -f "dist/index.html" ]; then
+            sed -i 's/href="\//href=".//g' dist/index.html
+            sed -i 's/src="\//src=".//g' dist/index.html
+            echo "Design paths fixed for mobile"
           fi
 
       - name: Capacitor Sync
         run: |
-          npm install @capacitor/android @capacitor/cli @capacitor-community/media
-          npx cap add android || echo "Android folder already there"
+          npx cap add android || echo "Android folder exists"
           npx cap sync android
 
       - name: Setup Java
@@ -57,6 +61,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ZabPlay-Success-APK
+          name: ZabPlay-Final-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
