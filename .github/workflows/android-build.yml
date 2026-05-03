@@ -15,35 +15,26 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: |
-          npm install
-          npm install @capacitor/android @capacitor/cli @capacitor-community/media
+        run: npm install
 
-      - name: Build Web Project
+      - name: Build Project
         run: npm run build
 
-      - name: TanStack Directory Fix
-        # Ye step sabse zaroori hai: Ye folder ko rename kar dega taaki Capacitor ko files mil jayein
+      - name: Move Build Files
+        # TanStack ki files ko 'dist' folder mein set karna taaki Capacitor error na de
         run: |
+          mkdir -p dist
           if [ -d ".output/public" ]; then
-            rm -rf dist
-            mv .output/public dist
-            echo "Fixed: .output/public moved to dist"
-          else
-            echo "Checking if dist already exists"
-            ls -d dist || mkdir dist
+            cp -r .output/public/* dist/
+          elif [ -d ".vinxi/build/client" ]; then
+            cp -r .vinxi/build/client/* dist/
           fi
 
       - name: Capacitor Sync
         run: |
+          npm install @capacitor/android @capacitor/cli @capacitor-community/media
           npx cap add android || echo "Android exists"
           npx cap sync android
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
 
       - name: Build APK
         run: |
