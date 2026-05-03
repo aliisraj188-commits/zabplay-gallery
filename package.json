@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "static": "vite build",
-    "cap:sync": "npx cap sync android"
+    "cap:sync": "npx cap sync android",
+    "build:cap": "npm run build && npx cap sync android"
   },
   "dependencies": {
     "@capacitor-community/media": "^6.0.0",
@@ -50,6 +51,7 @@
     "@tanstack/react-router": "^1.168.0",
     "@tanstack/react-start": "^1.167.14",
     "@tanstack/router-plugin": "^1.167.10",
+    "@tanstack/router-vite-plugin": "^1.167.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -91,4 +93,3 @@
     "vite": "^7.3.1"
   }
 }
-
