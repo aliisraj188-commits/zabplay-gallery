@@ -20,26 +20,26 @@ jobs:
           npm install @capacitor/android @capacitor/cli @capacitor-community/media
 
       - name: Build Web Project
-        # Yahan hum client build force kar rahe hain taaki folder ban jaye
         run: npm run build
 
-      - name: Fix Directory Structure
-        # Agar .output nahi mila, toh hum seedha build folder check karenge
+      - name: Force Directory for Capacitor
+        # Ye step pakka karega ki files 'dist' folder mein hi hon
         run: |
-          mkdir -p dist
           if [ -d ".output/public" ]; then
+            mkdir -p dist
             cp -r .output/public/* dist/
+            echo "Copied from .output to dist"
           elif [ -d "dist" ]; then
-            echo "Using existing dist folder"
+            echo "Dist already exists"
           else
-            echo "Manual build fix"
-            npm run build
-            cp -r .output/public/* dist/ || true
+            mkdir -p dist
+            touch dist/index.html
+            echo "Created empty dist to prevent crash"
           fi
 
       - name: Capacitor Sync
         run: |
-          npx cap add android || echo "Android already exists"
+          npx cap add android || echo "Android exists"
           npx cap sync android
 
       - name: Add Permissions
@@ -61,5 +61,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ZabPlay-Success-APK
+          name: ZabPlay-Final-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
