@@ -178,7 +178,7 @@ function PlayerPage() {
           "linear-gradient(180deg, oklch(0.20 0.05 60), oklch(0.18 0.03 90), oklch(0.20 0.06 150))",
       }}
     >
-      <div ref={containerRef} className="relative aspect-video w-full bg-black select-none">
+      <div ref={containerRef} className="sticky top-0 z-30 relative aspect-video w-full bg-black select-none shadow-lg">
         <video
           ref={videoRef}
           src={item.url}
