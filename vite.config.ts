@@ -1,6 +1,3 @@
-import { defineConfig } from 'vite'
-import { tanstackStart } from '@lovable.dev/vite-tanstack-config'
+import { defineConfig } from '@lovable.dev/vite-tanstack-config'
 
-export default defineConfig({
-  plugins: [tanstackStart()],
-})
+export default defineConfig({})
