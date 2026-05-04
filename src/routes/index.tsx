@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PlaySquare } from "lucide-react";
 import { AppShell } from "@/components/zab/AppShell";
-import { VideoCard } from "@/components/zab/VideoCard";
+import { VideoGrid } from "@/components/zab/VideoGrid";
 import { AddMediaButton } from "@/components/zab/AddMediaButton";
 import { EmptyState } from "@/components/zab/EmptyState";
-// Purana import rehne diya
-import { useMediaItems } from "@/hooks/use-media-store"; 
-// Naya scanner import kiya
-import { useGalleryScanner } from "../hooks/useGalleryScanner"; 
+import { useMediaItems } from "@/hooks/use-media-store";
+import { useGalleryScanner } from "../hooks/useGalleryScanner";
 
 export const Route = createFileRoute("/")({
   component: VideosPage,
