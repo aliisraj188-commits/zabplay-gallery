@@ -399,10 +399,14 @@ function PlayerPage() {
               const isCurrent = v.id === id;
               return (
                 <li key={v.id}>
-                  <Link
-                    to="/play/$id"
-                    params={{ id: v.id }}
-                    className={`flex gap-3 rounded-lg p-1 active:opacity-70 ${isCurrent ? "bg-brand/15 ring-1 ring-brand/50" : ""}`}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isCurrent) return;
+                      sessionStorage.setItem("zab_player_scroll", String(window.scrollY));
+                      router.navigate({ to: "/play/$id", params: { id: v.id }, replace: true });
+                    }}
+                    className={`flex w-full text-left gap-3 rounded-lg p-1 active:opacity-70 ${isCurrent ? "bg-brand/15 ring-1 ring-brand/50" : ""}`}
                   >
                     <div className="relative aspect-video w-32 flex-shrink-0 overflow-hidden rounded bg-secondary">
                       {v.thumbnail && <img src={v.thumbnail} alt={v.name} className="h-full w-full object-cover" />}
@@ -420,7 +424,7 @@ function PlayerPage() {
                     <p className={`line-clamp-2 flex-1 text-[13px] font-medium ${isCurrent ? "text-brand" : "text-foreground"}`}>
                       {prettyName(v.name)}
                     </p>
-                  </Link>
+                  </button>
                 </li>
               );
             })}
