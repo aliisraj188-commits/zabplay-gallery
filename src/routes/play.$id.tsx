@@ -85,6 +85,18 @@ function PlayerPage() {
     };
   }, []);
 
+  // Restore scroll position when navigating between videos in the list
+  useEffect(() => {
+    const saved = sessionStorage.getItem("zab_player_scroll");
+    if (saved) {
+      const y = Number(saved);
+      sessionStorage.removeItem("zab_player_scroll");
+      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior }));
+    } else {
+      window.scrollTo({ top: 0 });
+    }
+  }, [id]);
+
   const togglePlay = () => {
     if (locked) return;
     const v = videoRef.current; if (!v) return;
