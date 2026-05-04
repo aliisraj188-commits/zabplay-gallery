@@ -85,6 +85,18 @@ function PlayerPage() {
     };
   }, []);
 
+  // Restore scroll position when navigating between videos in the list
+  useEffect(() => {
+    const saved = sessionStorage.getItem("zab_player_scroll");
+    if (saved) {
+      const y = Number(saved);
+      sessionStorage.removeItem("zab_player_scroll");
+      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior }));
+    } else {
+      window.scrollTo({ top: 0 });
+    }
+  }, [id]);
+
   const togglePlay = () => {
     if (locked) return;
     const v = videoRef.current; if (!v) return;
@@ -178,7 +190,7 @@ function PlayerPage() {
           "linear-gradient(180deg, oklch(0.20 0.05 60), oklch(0.18 0.03 90), oklch(0.20 0.06 150))",
       }}
     >
-      <div ref={containerRef} className="relative aspect-video w-full bg-black select-none">
+      <div ref={containerRef} className="sticky top-0 z-30 relative aspect-video w-full bg-black select-none shadow-lg">
         <video
           ref={videoRef}
           src={item.url}
@@ -399,10 +411,14 @@ function PlayerPage() {
               const isCurrent = v.id === id;
               return (
                 <li key={v.id}>
-                  <Link
-                    to="/play/$id"
-                    params={{ id: v.id }}
-                    className={`flex gap-3 rounded-lg p-1 active:opacity-70 ${isCurrent ? "bg-brand/15 ring-1 ring-brand/50" : ""}`}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isCurrent) return;
+                      sessionStorage.setItem("zab_player_scroll", String(window.scrollY));
+                      router.navigate({ to: "/play/$id", params: { id: v.id }, replace: true });
+                    }}
+                    className={`flex w-full text-left gap-3 rounded-lg p-1 active:opacity-70 ${isCurrent ? "bg-brand/15 ring-1 ring-brand/50" : ""}`}
                   >
                     <div className="relative aspect-video w-32 flex-shrink-0 overflow-hidden rounded bg-secondary">
                       {v.thumbnail && <img src={v.thumbnail} alt={v.name} className="h-full w-full object-cover" />}
@@ -420,7 +436,7 @@ function PlayerPage() {
                     <p className={`line-clamp-2 flex-1 text-[13px] font-medium ${isCurrent ? "text-brand" : "text-foreground"}`}>
                       {prettyName(v.name)}
                     </p>
-                  </Link>
+                  </button>
                 </li>
               );
             })}
