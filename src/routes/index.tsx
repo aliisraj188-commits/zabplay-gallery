@@ -16,12 +16,9 @@ export const Route = createFileRoute("/")({
 
 function VideosPage() {
   // Purana data (agar pehle se kuch hai)
-  const storedVideos = useMediaItems("video"); 
-  // Phone ki gallery se automatic aane wali videos
-  const { mediaFiles } = useGalleryScanner(); 
-
-  // Dono ko milakar ek list banayi taaki kuch delete na ho
-  const allVideos = [...storedVideos, ...mediaFiles.filter(m => m.mediaType === 'video')];
+  const storedVideos = useMediaItems("video");
+  const { mediaFiles } = useGalleryScanner();
+  const allVideos = [...storedVideos, ...mediaFiles.filter((m) => m.kind === "video")];
 
   return (
     <AppShell>
@@ -32,11 +29,7 @@ function VideosPage() {
           description="Import videos from your device to start watching in ZabPlay."
         />
       ) : (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2 px-3 py-2">
-          {allVideos.map((v) => (
-            <VideoCard key={v.id || v.identifier} item={v} />
-          ))}
-        </div>
+        <VideoGrid items={allVideos} />
       )}
       <AddMediaButton kind="video" label="Add videos" />
     </AppShell>
