@@ -1,8 +1,5 @@
-import { createRouter, useRouter, createHashHistory } from "@tanstack/react-router"; // createHashHistory joda
+import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-
-// Hash history mobile ke liye sabse best hai taaki design load ho sake
-const hashHistory = createHashHistory();
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
