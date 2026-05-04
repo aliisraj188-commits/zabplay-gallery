@@ -63,7 +63,6 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: DefaultErrorComponent,
   });
-  });
 
   return router;
 };
