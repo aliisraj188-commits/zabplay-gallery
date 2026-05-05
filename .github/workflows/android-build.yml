@@ -1,140 +1,90 @@
-name: Build ZabPlay APK
+name: Build ZabPlay APK & AAB
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-      # ==================== STEP 1: Checkout ====================
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ==================== STEP 2: Setup Bun ====================
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '20'
 
-      # ==================== STEP 3: Fix Package.json Version Error ====================
-      - name: Fix TanStack Version Error
-        run: |
-          echo "🔧 Fixing @tanstack/router-vite-plugin version..."
-          
-          # package.json mein se exact version hatao aur latest lagao
-          # Ya phir poora tanstack section update karo
-          
-          # Method 1: package.json mein version fix karo
-          if grep -q "@tanstack/router-vite-plugin" package.json; then
-            echo "📦 Found router-vite-plugin in package.json"
-            
-            # Version ^1.167.10 ko latest mein convert karo
-            sed -i 's/"@tanstack\/router-vite-plugin": "\^1.167.10"/"@tanstack\/router-vite-plugin": "latest"/g' package.json
-            sed -i 's/"@tanstack\/router-vite-plugin": "\^1.167.10"/"@tanstack\/router-vite-plugin": "latest"/g' package.json
-            
-            # Agar koi aur format ho toh bhi catch karo
-            sed -i 's/"@tanstack\/router-vite-plugin": ".*"/"@tanstack\/router-vite-plugin": "latest"/g' package.json
-            
-            echo "✅ Version fixed to 'latest'"
-            cat package.json | grep -A1 -B1 "router-vite-plugin" || true
-          fi
-          
-          # Lock files delete karo taaki fresh install ho
-          echo "🗑️ Removing lock files..."
-          rm -f bun.lockb
-          rm -f package-lock.json
-          rm -rf node_modules
-
-      # ==================== STEP 4: Install Dependencies ====================
       - name: Install Dependencies
         run: |
-          echo "📦 Installing with Bun..."
-          
-          # Fresh install without lock file
-          bun install || {
-            echo "⚠️ First attempt failed, trying with --no-save..."
-            bun install --no-save || {
-              echo "⚠️ Trying npm fallback..."
-              npm install --legacy-peer-deps
-            }
-          }
-          
-          # Capacitor packages install karo
-          bun add @capacitor/android @capacitor/cli @capacitor/core || \
-          npm install @capacitor/android @capacitor/cli @capacitor/core --legacy-peer-deps
+          rm -f bun.lockb package-lock.json
+          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps \
+            @capacitor/core@^6.0.0 \
+            @capacitor/android@^6.0.0 \
+            @capacitor/cli@^6.0.0
 
-      # ==================== STEP 5: Build Project ====================
-      - name: Build Project
-        run: |
-          echo "🔨 Building..."
-          bun run build || npm run build
+      - name: Build Web Project
+        run: npm run build
 
-      # ==================== STEP 6: Auto Detect Build Output ====================
-      - name: Auto Detect Build Output
+      - name: Ensure dist/ contains build output
         run: |
-          echo "🔍 Searching for build output..."
-          
-          folders=(".output/public" "dist" ".vinxi/build/client" "build" "out")
-          SOURCE_DIR=""
-          FOUND=false
-          
-          for folder in "${folders[@]}"; do
-            if [ -d "$folder" ] && [ "$(ls -A $folder 2>/dev/null)" ]; then
-              echo "✅ Found: $folder"
-              SOURCE_DIR="$folder"
-              FOUND=true
-              break
-            fi
-          done
-          
-          if [ "$FOUND" = false ]; then
-            echo "❌ No build output found!"
-            ls -la
-            find . -maxdepth 3 -type d | head -30
+          if [ -d "dist" ] && [ "$(ls -A dist 2>/dev/null)" ]; then
+            echo "✅ dist/ already populated"
+          else
+            mkdir -p dist
+            for src in ".output/public" ".vinxi/build/client" "build" "out"; do
+              if [ -d "$src" ] && [ "$(ls -A $src 2>/dev/null)" ]; then
+                echo "📁 Copying $src -> dist/"
+                cp -r "$src"/* dist/
+                break
+              fi
+            done
+          fi
+
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ dist/index.html missing"
+            ls -la dist || true
             exit 1
           fi
-          
-          mkdir -p dist
-          cp -r "$SOURCE_DIR"/* dist/
-          echo "📁 Copied $(find dist -type f | wc -l) files to dist/"
 
-      # ==================== STEP 7: Fix Paths ====================
-      - name: Fix Paths for Mobile
+          # Make asset paths relative for Capacitor WebView
+          sed -i 's|href="/|href="./|g' dist/index.html
+          sed -i 's|src="/|src="./|g' dist/index.html
+
+      - name: Capacitor Sync Android
         run: |
-          if [ -f "dist/index.html" ]; then
-            sed -i 's|href="/|href="./|g' dist/index.html
-            sed -i 's|src="/|src="./|g' dist/index.html
-            echo "✅ Paths fixed"
-          fi
+          npx cap add android 2>/dev/null || echo "Android platform already exists"
+          npx cap sync android
 
-      # ==================== STEP 8: Capacitor Sync ====================
-      - name: Capacitor Sync
-        run: |
-          bunx cap add android 2>/dev/null || echo "Android exists"
-          bunx cap sync android || npx cap sync android
-
-      # ==================== STEP 9: Setup Java ====================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # ==================== STEP 10: Build APK ====================
-      - name: Build APK
+      - name: Build APK (assembleDebug)
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      # ==================== STEP 11: Upload APK ====================
+      - name: Build AAB (bundleDebug)
+        run: |
+          cd android
+          ./gradlew bundleDebug --no-daemon
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ZabPlay-APK-${{ github.run_number }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
-      
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZabPlay-AAB-${{ github.run_number }}
+          path: android/app/build/outputs/bundle/debug/app-debug.aab
