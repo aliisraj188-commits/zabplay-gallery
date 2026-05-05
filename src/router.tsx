@@ -1,4 +1,4 @@
-import { createRouter, useRouter } from "@tanstack/react-router";
+import { createRouter, useRouter, createHashHistory } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
@@ -56,8 +56,11 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 }
 
 export const getRouter = () => {
+  // Hash history is required for the Capacitor Android build so that
+  // in-app navigation works inside the file:// WebView without a server.
   const router = createRouter({
     routeTree,
+    history: typeof window !== "undefined" ? createHashHistory() : undefined,
     context: {},
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
