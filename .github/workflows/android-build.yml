@@ -100,16 +100,19 @@ jobs:
           sed -i 's|href="/|href="./|g' dist/index.html
           sed -i 's|src="/|src="./|g' dist/index.html
 
-      - name: Capacitor Sync Android
-        run: |
-          npx cap add android 2>/dev/null || echo "Android platform already exists"
-          npx cap sync android
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Capacitor Sync Android
+        run: |
+          npx cap add android 2>/dev/null || echo "Android platform already exists"
+          npx cap sync android
 
       - name: Build APK (assembleDebug)
         run: |
