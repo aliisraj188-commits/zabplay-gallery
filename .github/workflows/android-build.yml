@@ -30,8 +30,8 @@ jobs:
         run: |
           mkdir -p dist
 
-          if [ -f "dist/client/index.html" ]; then
-            echo "✅ TanStack build found at dist/client; flattening for Capacitor webDir=dist"
+          if [ -d "dist/client/assets" ]; then
+            echo "✅ TanStack client build found at dist/client; flattening for Capacitor webDir=dist"
             cp -a dist/client/. dist/
           elif [ -f ".output/public/index.html" ]; then
             echo "📁 Copying .output/public -> dist/"
@@ -48,18 +48,52 @@ jobs:
           elif [ -f "dist/index.html" ]; then
             echo "✅ dist/index.html already exists"
           else
-            echo "❌ Could not find web index.html for Capacitor"
-            echo "Project root:"
-            ls -la
-            echo "dist:"
-            ls -la dist || true
-            exit 1
+            echo "⚠️ No known static output folder found; will try to create Capacitor index.html from dist/assets"
           fi
 
           if [ ! -f "dist/index.html" ]; then
-            echo "❌ dist/index.html missing"
-            ls -la dist || true
-            exit 1
+            node --input-type=module <<'NODE'
+          import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+          import { join } from 'node:path'
+
+          const assetsDir = 'dist/assets'
+          if (!existsSync(assetsDir)) {
+            console.error('❌ dist/assets missing')
+            process.exit(1)
+          }
+
+          const jsFiles = readdirSync(assetsDir).filter((file) => file.endsWith('.js'))
+          const entryFile = jsFiles.find((file) => {
+            const code = readFileSync(join(assetsDir, file), 'utf8')
+            return code.includes('hydrateRoot(document') || code.includes('createRoot(document')
+          })
+
+          if (!entryFile) {
+            console.error('❌ Could not find browser entry JavaScript in dist/assets')
+            process.exit(1)
+          }
+
+          const cssLinks = readdirSync(assetsDir)
+            .filter((file) => file.endsWith('.css'))
+            .map((file) => `    <link rel="stylesheet" href="./assets/${file}">`)
+            .join('\n')
+
+          writeFileSync('dist/index.html', `<!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+              <title>ZabPlay</title>
+          ${cssLinks}
+            </head>
+            <body>
+              <script type="module" src="./assets/${entryFile}"></script>
+            </body>
+          </html>
+          `)
+
+          console.log(`✅ Created dist/index.html using ./assets/${entryFile}`)
+          NODE
           fi
 
           # Make asset paths relative for Capacitor WebView
