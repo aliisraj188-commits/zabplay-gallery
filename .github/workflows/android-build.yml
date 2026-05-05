@@ -22,49 +22,97 @@ jobs:
         run: |
           rm -f bun.lockb package-lock.json
           npm install --legacy-peer-deps
-          npm install --legacy-peer-deps \
-            @capacitor/core@^6.0.0 \
-            @capacitor/android@^6.0.0 \
-            @capacitor/cli@^6.0.0
 
       - name: Build Web Project
         run: npm run build
 
       - name: Ensure dist/ contains build output
         run: |
-          if [ -d "dist" ] && [ "$(ls -A dist 2>/dev/null)" ]; then
-            echo "✅ dist/ already populated"
+          mkdir -p dist
+
+          if [ -d "dist/client/assets" ]; then
+            echo "✅ TanStack client build found at dist/client; flattening for Capacitor webDir=dist"
+            cp -a dist/client/. dist/
+          elif [ -f ".output/public/index.html" ]; then
+            echo "📁 Copying .output/public -> dist/"
+            cp -a .output/public/. dist/
+          elif [ -f ".vinxi/build/client/index.html" ]; then
+            echo "📁 Copying .vinxi/build/client -> dist/"
+            cp -a .vinxi/build/client/. dist/
+          elif [ -f "build/index.html" ]; then
+            echo "📁 Copying build -> dist/"
+            cp -a build/. dist/
+          elif [ -f "out/index.html" ]; then
+            echo "📁 Copying out -> dist/"
+            cp -a out/. dist/
+          elif [ -f "dist/index.html" ]; then
+            echo "✅ dist/index.html already exists"
           else
-            mkdir -p dist
-            for src in ".output/public" ".vinxi/build/client" "build" "out"; do
-              if [ -d "$src" ] && [ "$(ls -A $src 2>/dev/null)" ]; then
-                echo "📁 Copying $src -> dist/"
-                cp -r "$src"/* dist/
-                break
-              fi
-            done
+            echo "⚠️ No known static output folder found; will try to create Capacitor index.html from dist/assets"
           fi
 
           if [ ! -f "dist/index.html" ]; then
-            echo "❌ dist/index.html missing"
-            ls -la dist || true
-            exit 1
+            node --input-type=module <<'NODE'
+          import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+          import { join } from 'node:path'
+
+          const assetsDir = 'dist/assets'
+          if (!existsSync(assetsDir)) {
+            console.error('❌ dist/assets missing')
+            process.exit(1)
+          }
+
+          const jsFiles = readdirSync(assetsDir).filter((file) => file.endsWith('.js'))
+          const entryFile = jsFiles.find((file) => {
+            const code = readFileSync(join(assetsDir, file), 'utf8')
+            return code.includes('hydrateRoot(document') || code.includes('createRoot(document')
+          })
+
+          if (!entryFile) {
+            console.error('❌ Could not find browser entry JavaScript in dist/assets')
+            process.exit(1)
+          }
+
+          const cssLinks = readdirSync(assetsDir)
+            .filter((file) => file.endsWith('.css'))
+            .map((file) => `    <link rel="stylesheet" href="./assets/${file}">`)
+            .join('\n')
+
+          writeFileSync('dist/index.html', `<!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+              <title>ZabPlay</title>
+          ${cssLinks}
+            </head>
+            <body>
+              <script type="module" src="./assets/${entryFile}"></script>
+            </body>
+          </html>
+          `)
+
+          console.log(`✅ Created dist/index.html using ./assets/${entryFile}`)
+          NODE
           fi
 
           # Make asset paths relative for Capacitor WebView
           sed -i 's|href="/|href="./|g' dist/index.html
           sed -i 's|src="/|src="./|g' dist/index.html
 
-      - name: Capacitor Sync Android
-        run: |
-          npx cap add android 2>/dev/null || echo "Android platform already exists"
-          npx cap sync android
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Capacitor Sync Android
+        run: |
+          npx cap add android 2>/dev/null || echo "Android platform already exists"
+          npx cap sync android
 
       - name: Build APK (assembleDebug)
         run: |
