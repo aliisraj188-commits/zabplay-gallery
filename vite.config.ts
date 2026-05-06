@@ -1,7 +1,20 @@
 import { defineConfig } from '@lovable.dev/vite-tanstack-config'
 
-// base: './' is required for Capacitor Android so that built assets
-// resolve via relative paths (file://) inside the WebView.
+// Android/Capacitor needs a real static SPA shell plus relative assets.
 export default defineConfig({
-  base: './',
+  vite: {
+    base: './',
+    build: {
+      outDir: 'dist',
+    },
+  },
+  tanstackStart: {
+    spa: {
+      enabled: true,
+      prerender: {
+        outputPath: '/index',
+        crawlLinks: false,
+      },
+    },
+  },
 })
