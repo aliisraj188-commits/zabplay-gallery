@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.israj.zabplay',
   appName: 'ZabPlay',
-  webDir: 'dist/client',
+  webDir: 'dist',
   server: {
     androidScheme: 'https',
     cleartext: true 
