@@ -94,6 +94,7 @@ jobs:
           ${cssLinks}
             </head>
             <body>
+              <div id="root"></div>
               <script type="module" src="${toHref(entryFile)}"></script>
             </body>
           </html>
@@ -106,6 +107,14 @@ jobs:
           # Make asset paths relative for Capacitor WebView
           sed -i 's|href="/|href="./|g' dist/index.html
           sed -i 's|src="/|src="./|g' dist/index.html
+
+          if ! grep -q '<div id="root"' dist/index.html; then
+            sed -i 's|<body>|<body><div id="root"></div>|' dist/index.html
+          fi
+
+          test -f dist/index.html
+          grep -q '<script type="module"' dist/index.html
+          grep -q '<div id="root"' dist/index.html
 
       - name: Setup Java
         uses: actions/setup-java@v4
