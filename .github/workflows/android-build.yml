@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Dependencies
         run: |
@@ -53,29 +53,36 @@ jobs:
 
           if [ ! -f "dist/index.html" ]; then
             node --input-type=module <<'NODE'
-          import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-          import { join } from 'node:path'
+          import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+          import { join, relative } from 'node:path'
 
-          const assetsDir = 'dist/assets'
-          if (!existsSync(assetsDir)) {
-            console.error('❌ dist/assets missing')
+          const distDir = 'dist'
+          if (!existsSync(distDir)) {
+            console.error('❌ dist folder missing after web build')
             process.exit(1)
           }
 
-          const jsFiles = readdirSync(assetsDir).filter((file) => file.endsWith('.js'))
-          const entryFile = jsFiles.find((file) => {
-            const code = readFileSync(join(assetsDir, file), 'utf8')
-            return code.includes('hydrateRoot(document') || code.includes('createRoot(document')
+          const walk = (dir) => readdirSync(dir).flatMap((name) => {
+            const path = join(dir, name)
+            return statSync(path).isDirectory() ? walk(path) : [path]
           })
 
+          const toHref = (file) => `./${relative(distDir, file).replaceAll('\\', '/')}`
+          const files = walk(distDir)
+          const jsFiles = files.filter((file) => file.endsWith('.js'))
+          const entryFile = jsFiles.find((file) => {
+            const code = readFileSync(file, 'utf8')
+            return code.includes('hydrateRoot(document') || code.includes('createRoot(document')
+          }) ?? jsFiles.find((file) => readFileSync(file, 'utf8').includes('@tanstack/react-start')) ?? jsFiles[0]
+
           if (!entryFile) {
-            console.error('❌ Could not find browser entry JavaScript in dist/assets')
+            console.error('❌ Could not find browser entry JavaScript in dist')
             process.exit(1)
           }
 
-          const cssLinks = readdirSync(assetsDir)
+          const cssLinks = files
             .filter((file) => file.endsWith('.css'))
-            .map((file) => `    <link rel="stylesheet" href="./assets/${file}">`)
+            .map((file) => `    <link rel="stylesheet" href="${toHref(file)}">`)
             .join('\n')
 
           writeFileSync('dist/index.html', `<!doctype html>
@@ -87,12 +94,12 @@ jobs:
           ${cssLinks}
             </head>
             <body>
-              <script type="module" src="./assets/${entryFile}"></script>
+              <script type="module" src="${toHref(entryFile)}"></script>
             </body>
           </html>
           `)
 
-          console.log(`✅ Created dist/index.html using ./assets/${entryFile}`)
+          console.log(`✅ Created dist/index.html using ${toHref(entryFile)}`)
           NODE
           fi
 
