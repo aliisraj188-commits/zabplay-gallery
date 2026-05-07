@@ -9,6 +9,9 @@ export default defineConfig({
     },
   },
   tanstackStart: {
+    client: {
+      base: './_build',
+    },
     spa: {
       enabled: true,
       prerender: {
