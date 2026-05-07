@@ -92,8 +92,9 @@ jobs:
               <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
               <title>ZabPlay</title>
           ${cssLinks}
+              <style id="zabplay-apk-red-test">html,body,#root{min-height:100%;background:red!important;}body{margin:0;background:red!important;}</style>
             </head>
-            <body>
+            <body style="background:red!important;">
               <div id="root"></div>
               <script type="module" src="${toHref(entryFile)}"></script>
             </body>
@@ -108,6 +109,29 @@ jobs:
           sed -i 's|href="/|href="./|g' dist/index.html
           sed -i 's|src="/|src="./|g' dist/index.html
 
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs'
+
+          const indexPath = 'dist/index.html'
+          let html = readFileSync(indexPath, 'utf8')
+          const redStyle = '<style id="zabplay-apk-red-test">html,body,#root{min-height:100%;background:red!important;}body{margin:0;background:red!important;}</style>'
+
+          if (!html.includes('zabplay-apk-red-test')) {
+            html = html.includes('</head>')
+              ? html.replace('</head>', `${redStyle}\n</head>`)
+              : `${redStyle}\n${html}`
+          }
+
+          html = html.replace(/<body([^>]*)>/i, (match, attrs) => {
+            if (/style=/i.test(attrs)) {
+              return match.replace(/style=(['"])(.*?)\1/i, 'style=$1background:red!important;$2$1')
+            }
+            return `<body${attrs} style="background:red!important;">`
+          })
+
+          writeFileSync(indexPath, html)
+          NODE
+
           if ! grep -q '<div id="root"' dist/index.html; then
             sed -i 's|<body>|<body><div id="root"></div>|' dist/index.html
           fi
@@ -115,6 +139,9 @@ jobs:
           test -f dist/index.html
           grep -q '<script type="module"' dist/index.html
           grep -q '<div id="root"' dist/index.html
+          grep -q 'zabplay-apk-red-test' dist/index.html
+          grep -q "androidScheme: 'http'" capacitor.config.ts
+          grep -q 'bundledWebRuntime: false' capacitor.config.ts
 
       - name: Setup Java
         uses: actions/setup-java@v4
