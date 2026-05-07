@@ -4,6 +4,7 @@ const config: CapacitorConfig = {
   appId: 'com.israj.zabplay',
   appName: 'ZabPlay',
   webDir: 'dist',
+  bundledWebRuntime: false,
   server: {
     androidScheme: 'https',
     cleartext: true 
