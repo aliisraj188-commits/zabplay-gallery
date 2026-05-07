@@ -1,6 +1,6 @@
-import { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from '@capacitor/cli';
 
-const config: CapacitorConfig = {
+const config = {
   appId: 'com.israj.zabplay',
   appName: 'ZabPlay',
   webDir: 'dist',
@@ -14,6 +14,6 @@ const config: CapacitorConfig = {
       androidGalleryMode: true,
     },
   }
-};
+} satisfies CapacitorConfig & { bundledWebRuntime: false };
 
 export default config;
