@@ -6,7 +6,7 @@ const config = {
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
-    androidScheme: 'https',
+    androidScheme: 'http',
     cleartext: true 
   },
   plugins: {
