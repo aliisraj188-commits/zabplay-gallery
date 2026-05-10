@@ -11,65 +11,30 @@
   --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-brand: var(--brand);
-  --color-brand-foreground: var(--brand-foreground);
-  --color-surface: var(--surface);
-  --color-surface-elevated: var(--surface-elevated);
 }
 
 :root {
-  --radius: 0.625rem;
-  /* Tiranga inspired palette */
-  --tiranga-saffron: oklch(0.74 0.18 55);
-  --tiranga-white: oklch(0.97 0.005 90);
-  --tiranga-green: oklch(0.55 0.16 150);
-  --tiranga-navy: oklch(0.42 0.18 265);
-
-  --background: oklch(0.16 0.025 80);
+  --radius: 0.75rem;
+  
+  /* ZabPlay Premium Theme - Black & Gold */
+  --background: oklch(0.12 0 0); /* Pure Dark Background */
   --foreground: oklch(0.98 0 0);
-  --card: oklch(0.20 0.03 80);
+  
+  --primary: oklch(0.85 0.15 85); /* Premium Gold */
+  --primary-foreground: oklch(0.10 0 0);
+  
+  --card: oklch(0.16 0.01 0);
   --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.18 0.025 80);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.74 0.18 55);
-  --primary-foreground: oklch(0.15 0.02 80);
-  --secondary: oklch(0.24 0.03 150);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.24 0.02 80);
-  --muted-foreground: oklch(0.78 0.02 80);
-  --accent: oklch(0.55 0.16 150);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.62 0.24 27);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.30 0.03 80);
-  --input: oklch(0.26 0.03 80);
-  --ring: oklch(0.74 0.18 55);
-  --brand: oklch(0.74 0.18 55);
-  --brand-foreground: oklch(0.15 0.02 80);
-  --surface: oklch(0.18 0.025 80);
-  --surface-elevated: oklch(0.22 0.03 80);
-}
-
-.dark {
-  --background: oklch(0.16 0.025 80);
-  --foreground: oklch(0.98 0 0);
+  
+  --muted: oklch(0.25 0.01 0);
+  --muted-foreground: oklch(0.70 0 0);
+  
+  --border: oklch(0.20 0.01 0);
+  --ring: oklch(0.85 0.15 85);
 }
 
 @layer base {
@@ -78,41 +43,24 @@
   }
   html, body, #root {
     height: 100%;
+    background-color: var(--background);
   }
   body {
     color: var(--color-foreground);
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
-    background-color: oklch(0.14 0.02 80);
-    background-image:
-      radial-gradient(at 0% 0%, oklch(0.74 0.18 55 / 0.18) 0px, transparent 45%),
-      radial-gradient(at 100% 0%, oklch(0.97 0.005 90 / 0.10) 0px, transparent 40%),
-      radial-gradient(at 50% 100%, oklch(0.55 0.16 150 / 0.20) 0px, transparent 55%),
-      linear-gradient(180deg, oklch(0.18 0.03 60) 0%, oklch(0.16 0.02 90) 50%, oklch(0.18 0.04 150) 100%);
-    background-attachment: fixed;
+    /* Red screen fixed: Using clean black background */
+    background-image: none; 
   }
 }
 
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { scrollbar-width: none; }
-  .bg-tiranga {
-    background-image: linear-gradient(180deg,
-      oklch(0.74 0.18 55) 0%, oklch(0.74 0.18 55) 33%,
-      oklch(0.97 0.005 90) 33%, oklch(0.97 0.005 90) 66%,
-      oklch(0.55 0.16 150) 66%, oklch(0.55 0.16 150) 100%);
-  }
-  .bg-tiranga-soft {
-    background-image: linear-gradient(135deg,
-      oklch(0.74 0.18 55 / 0.85) 0%,
-      oklch(0.97 0.005 90 / 0.95) 50%,
-      oklch(0.55 0.16 150 / 0.85) 100%);
-  }
-  .ring-tiranga {
-    box-shadow:
-      0 0 0 2px oklch(0.74 0.18 55),
-      0 0 0 4px oklch(0.97 0.005 90),
-      0 0 0 6px oklch(0.55 0.16 150),
-      0 8px 28px oklch(0.42 0.18 265 / 0.45);
+  
+  /* Gold glow for your logo and buttons */
+  .gold-glow {
+    box-shadow: 0 0 20px oklch(0.85 0.15 85 / 0.3);
   }
 }
+
