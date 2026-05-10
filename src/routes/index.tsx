@@ -13,23 +13,32 @@ export const Route = createFileRoute("/")({
 });
 
 function VideosPage() {
-  // Purana data (agar pehle se kuch hai)
-  const storedVideos = useMediaItems("video");
+  // गैलरी से वीडियो लोड करना
+  const storedVideos = useMediaItems("video") || [];
   const { mediaFiles } = useGalleryScanner();
-  const allVideos = [...storedVideos, ...mediaFiles.filter((m) => m.kind === "video")];
+  
+  // सिर्फ वीडियो फाइल्स को फिल्टर करके लिस्ट बनाना
+  const allVideos = [
+    ...storedVideos, 
+    ...(mediaFiles?.filter((m) => m.kind === "video") || [])
+  ];
 
   return (
-    <AppShell>
-      {allVideos.length === 0 ? (
-        <EmptyState
-          icon={PlaySquare}
-          title="No videos yet"
-          description="Import videos from your device to start watching in ZabPlay."
-        />
-      ) : (
-        <VideoGrid items={allVideos} />
-      )}
-      <AddMediaButton kind="video" label="Add videos" />
-    </AppShell>
+    // 'bg-background' सुनिश्चित करता है कि अब लाल रंग नहीं दिखेगा
+    <div className="bg-background min-h-screen">
+      <AppShell>
+        {allVideos.length === 0 ? (
+          <EmptyState
+            icon={PlaySquare}
+            title="ZabPlay - No videos"
+            description="अपने फोन की गैलरी से वीडियो लोड करने के लिए नीचे बटन दबाएं।"
+          />
+        ) : (
+          <VideoGrid items={allVideos} />
+        )}
+        <AddMediaButton kind="video" label="Add videos" />
+      </AppShell>
+    </div>
   );
 }
+
