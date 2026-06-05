@@ -18,7 +18,7 @@ export default defineConfig({
       enabled: true,
       maskPath: '/',
       prerender: {
-        outputPath: '/',
+        outputPath: '/_shell',
         crawlLinks: false,
         failOnError: true,
       },
