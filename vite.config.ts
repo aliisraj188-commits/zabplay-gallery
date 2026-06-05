@@ -1,10 +1,9 @@
 import { defineConfig } from '@lovable.dev/vite-tanstack-config'
 
-// Android/Capacitor uses the client build plus a generated static shell in CI.
-// TanStack prerender can fail in this environment by throwing a Response object,
-// so keep prerender disabled for APK/AAB builds and let the workflow create index.html.
+// Capacitor needs the real TanStack client HTML in dist/client/index.html.
+// SPA mode prerenders that shell so the APK/AAB package includes the actual app design.
 export default defineConfig({
-  cloudflare: false,
+  nitro: false,
   vite: {
     base: './',
     build: {
@@ -15,8 +14,14 @@ export default defineConfig({
     client: {
       base: './_build',
     },
-    prerender: {
-      enabled: false,
+    spa: {
+      enabled: true,
+      maskPath: '/',
+      prerender: {
+        outputPath: '/_shell',
+        crawlLinks: false,
+        failOnError: true,
+      },
     },
   },
 })

@@ -20,91 +20,28 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          rm -f bun.lockb package-lock.json
           npm install --legacy-peer-deps
 
       - name: Build Web Project
         run: npm run build
 
-      - name: Ensure dist/ contains a Capacitor-ready index.html
+      - name: Verify Capacitor web bundle
         run: |
-          mkdir -p dist
-
-          # Flatten any nested client build into dist/
-          if [ -d "dist/client" ]; then
-            echo "📁 Flattening dist/client -> dist/"
-            cp -a dist/client/. dist/
+          if [ ! -f dist/client/index.html ] && [ -f dist/client/_shell.html ]; then
+            cp dist/client/_shell.html dist/client/index.html
           fi
-          if [ ! -f "dist/index.html" ] && [ -f ".output/public/index.html" ]; then
-            echo "📁 Copying .output/public -> dist/"
-            cp -a .output/public/. dist/
-          fi
-          if [ ! -f "dist/index.html" ] && [ -f ".vinxi/build/client/index.html" ]; then
-            echo "📁 Copying .vinxi/build/client -> dist/"
-            cp -a .vinxi/build/client/. dist/
-          fi
+          test -f dist/client/index.html
+          sed -i 's|href="/|href="./|g' dist/client/index.html
+          sed -i 's|src="/|src="./|g' dist/client/index.html
 
-          # If still no index.html, synthesize one that boots the React app
-          if [ ! -f "dist/index.html" ]; then
-            echo "⚙️ Generating dist/index.html from built JS/CSS assets"
-            node --input-type=module <<'NODE'
-          import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-          import { join, relative } from 'node:path'
-
-          const distDir = 'dist'
-          if (!existsSync(distDir)) { console.error('❌ dist missing'); process.exit(1) }
-
-          const walk = (d) => readdirSync(d).flatMap((n) => {
-            const p = join(d, n)
-            return statSync(p).isDirectory() ? walk(p) : [p]
-          })
-          const toHref = (f) => './' + relative(distDir, f).replaceAll('\\','/')
-
-          const files = walk(distDir)
-          const jsFiles = files.filter((f) => f.endsWith('.js'))
-          const entry = jsFiles.find((f) => {
-            const c = readFileSync(f, 'utf8')
-            return c.includes('hydrateRoot(document') || c.includes('createRoot(document')
-          }) ?? jsFiles.find((f) => readFileSync(f, 'utf8').includes('@tanstack/react-start')) ?? jsFiles[0]
-          if (!entry) { console.error('❌ no JS entry'); process.exit(1) }
-
-          const cssLinks = files.filter((f) => f.endsWith('.css'))
-            .map((f) => `    <link rel="stylesheet" href="${toHref(f)}">`).join('\n')
-
-          writeFileSync('dist/index.html', `<!doctype html>
-          <html lang="en">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-              <title>ZabPlay</title>
-          ${cssLinks}
-            </head>
-            <body>
-              <div id="root"></div>
-              <script type="module" src="${toHref(entry)}"></script>
-            </body>
-          </html>
-          `)
-          console.log('✅ Created dist/index.html with entry ' + toHref(entry))
-          NODE
-          fi
-
-          # Make all asset paths relative for the Capacitor WebView
-          sed -i 's|href="/|href="./|g' dist/index.html
-          sed -i 's|src="/|src="./|g' dist/index.html
-
-          # Guarantee <div id="root"></div> exists
-          if ! grep -q '<div id="root"' dist/index.html; then
-            sed -i 's|<body>|<body><div id="root"></div>|' dist/index.html
-          fi
-
-          echo "----- dist/index.html (first 60 lines) -----"
-          head -60 dist/index.html
+          echo "----- dist/client/index.html (first 80 lines) -----"
+          head -80 dist/client/index.html
           echo "--------------------------------------------"
 
-          test -f dist/index.html
-          grep -q '<script' dist/index.html
-          grep -q '<div id="root"' dist/index.html
+          grep -q '<script' dist/client/index.html
+          grep -q '<link rel="stylesheet"\|\.css' dist/client/index.html
+          grep -q '_build/' dist/client/index.html
+          grep -q "webDir: 'dist/client'" capacitor.config.ts
 
       - name: Setup Java
         uses: actions/setup-java@v4
