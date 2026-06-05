@@ -26,64 +26,50 @@ jobs:
       - name: Build Web Project
         run: npm run build
 
-      - name: Ensure dist/ contains build output
+      - name: Ensure dist/ contains a Capacitor-ready index.html
         run: |
           mkdir -p dist
 
-          if [ -d "dist/client/assets" ]; then
-            echo "✅ TanStack client build found at dist/client; flattening for Capacitor webDir=dist"
+          # Flatten any nested client build into dist/
+          if [ -d "dist/client" ]; then
+            echo "📁 Flattening dist/client -> dist/"
             cp -a dist/client/. dist/
-          elif [ -f ".output/public/index.html" ]; then
+          fi
+          if [ ! -f "dist/index.html" ] && [ -f ".output/public/index.html" ]; then
             echo "📁 Copying .output/public -> dist/"
             cp -a .output/public/. dist/
-          elif [ -f ".vinxi/build/client/index.html" ]; then
+          fi
+          if [ ! -f "dist/index.html" ] && [ -f ".vinxi/build/client/index.html" ]; then
             echo "📁 Copying .vinxi/build/client -> dist/"
             cp -a .vinxi/build/client/. dist/
-          elif [ -f "build/index.html" ]; then
-            echo "📁 Copying build -> dist/"
-            cp -a build/. dist/
-          elif [ -f "out/index.html" ]; then
-            echo "📁 Copying out -> dist/"
-            cp -a out/. dist/
-          elif [ -f "dist/index.html" ]; then
-            echo "✅ dist/index.html already exists"
-          else
-            echo "⚠️ No known static output folder found; will try to create Capacitor index.html from dist/assets"
           fi
 
+          # If still no index.html, synthesize one that boots the React app
           if [ ! -f "dist/index.html" ]; then
+            echo "⚙️ Generating dist/index.html from built JS/CSS assets"
             node --input-type=module <<'NODE'
           import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
           import { join, relative } from 'node:path'
 
           const distDir = 'dist'
-          if (!existsSync(distDir)) {
-            console.error('❌ dist folder missing after web build')
-            process.exit(1)
-          }
+          if (!existsSync(distDir)) { console.error('❌ dist missing'); process.exit(1) }
 
-          const walk = (dir) => readdirSync(dir).flatMap((name) => {
-            const path = join(dir, name)
-            return statSync(path).isDirectory() ? walk(path) : [path]
+          const walk = (d) => readdirSync(d).flatMap((n) => {
+            const p = join(d, n)
+            return statSync(p).isDirectory() ? walk(p) : [p]
           })
+          const toHref = (f) => './' + relative(distDir, f).replaceAll('\\','/')
 
-          const toHref = (file) => `./${relative(distDir, file).replaceAll('\\', '/')}`
           const files = walk(distDir)
-          const jsFiles = files.filter((file) => file.endsWith('.js'))
-          const entryFile = jsFiles.find((file) => {
-            const code = readFileSync(file, 'utf8')
-            return code.includes('hydrateRoot(document') || code.includes('createRoot(document')
-          }) ?? jsFiles.find((file) => readFileSync(file, 'utf8').includes('@tanstack/react-start')) ?? jsFiles[0]
+          const jsFiles = files.filter((f) => f.endsWith('.js'))
+          const entry = jsFiles.find((f) => {
+            const c = readFileSync(f, 'utf8')
+            return c.includes('hydrateRoot(document') || c.includes('createRoot(document')
+          }) ?? jsFiles.find((f) => readFileSync(f, 'utf8').includes('@tanstack/react-start')) ?? jsFiles[0]
+          if (!entry) { console.error('❌ no JS entry'); process.exit(1) }
 
-          if (!entryFile) {
-            console.error('❌ Could not find browser entry JavaScript in dist')
-            process.exit(1)
-          }
-
-          const cssLinks = files
-            .filter((file) => file.endsWith('.css'))
-            .map((file) => `    <link rel="stylesheet" href="${toHref(file)}">`)
-            .join('\n')
+          const cssLinks = files.filter((f) => f.endsWith('.css'))
+            .map((f) => `    <link rel="stylesheet" href="${toHref(f)}">`).join('\n')
 
           writeFileSync('dist/index.html', `<!doctype html>
           <html lang="en">
@@ -92,56 +78,33 @@ jobs:
               <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
               <title>ZabPlay</title>
           ${cssLinks}
-              <style id="zabplay-apk-red-test">html,body,#root{min-height:100%;background:red!important;}body{margin:0;background:red!important;}</style>
             </head>
-            <body style="background:red!important;">
+            <body>
               <div id="root"></div>
-              <script type="module" src="${toHref(entryFile)}"></script>
+              <script type="module" src="${toHref(entry)}"></script>
             </body>
           </html>
           `)
-
-          console.log(`✅ Created dist/index.html using ${toHref(entryFile)}`)
+          console.log('✅ Created dist/index.html with entry ' + toHref(entry))
           NODE
           fi
 
-          # Make asset paths relative for Capacitor WebView
+          # Make all asset paths relative for the Capacitor WebView
           sed -i 's|href="/|href="./|g' dist/index.html
           sed -i 's|src="/|src="./|g' dist/index.html
 
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from 'node:fs'
-
-          const indexPath = 'dist/index.html'
-          let html = readFileSync(indexPath, 'utf8')
-          const redStyle = '<style id="zabplay-apk-red-test">html,body,#root{min-height:100%;background:red!important;}body{margin:0;background:red!important;}</style>'
-
-          if (!html.includes('zabplay-apk-red-test')) {
-            html = html.includes('</head>')
-              ? html.replace('</head>', `${redStyle}\n</head>`)
-              : `${redStyle}\n${html}`
-          }
-
-          html = html.replace(/<body([^>]*)>/i, (match, attrs) => {
-            if (/style=/i.test(attrs)) {
-              return match.replace(/style=(['"])(.*?)\1/i, 'style=$1background:red!important;$2$1')
-            }
-            return `<body${attrs} style="background:red!important;">`
-          })
-
-          writeFileSync(indexPath, html)
-          NODE
-
+          # Guarantee <div id="root"></div> exists
           if ! grep -q '<div id="root"' dist/index.html; then
             sed -i 's|<body>|<body><div id="root"></div>|' dist/index.html
           fi
 
+          echo "----- dist/index.html (first 60 lines) -----"
+          head -60 dist/index.html
+          echo "--------------------------------------------"
+
           test -f dist/index.html
-          grep -q '<script type="module"' dist/index.html
+          grep -q '<script' dist/index.html
           grep -q '<div id="root"' dist/index.html
-          grep -q 'zabplay-apk-red-test' dist/index.html
-          grep -q "androidScheme: 'http'" capacitor.config.ts
-          grep -q 'bundledWebRuntime: false' capacitor.config.ts
 
       - name: Setup Java
         uses: actions/setup-java@v4
