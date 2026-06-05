@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/react-router";
 
 // NotFoundComponent: जब कोई पेज न मिले
@@ -27,16 +28,28 @@ export const Route = createRootRoute({
       { name: "description", content: "ZabPlay Gallery: Premium Experience" },
     ],
   }),
-  // हमने 'shellComponent' हटा दिया है क्योंकि वही लाल स्क्रीन ला रहा था
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
 
 function RootComponent() {
   return (
-    <>
+    <RootDocument>
       <Outlet />
-      <Scripts />
-    </>
+    </RootDocument>
+  );
+}
+
+function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
   );
 }
