@@ -8,7 +8,7 @@ import { useMediaItems } from "@/hooks/use-media-store";
 import { useGalleryScanner } from "../hooks/useGalleryScanner";
 
 // यहाँ /music था जिसे मैंने "/" कर दिया है, ताकि लाल स्क्रीन हट जाए
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/music")({
   component: VideosPage,
   head: () => ({ meta: [{ title: "ZabPlay - Videos" }] }),
 });
