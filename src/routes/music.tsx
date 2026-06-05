@@ -1,40 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PlaySquare } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Music2 } from "lucide-react";
 import { AppShell } from "@/components/zab/AppShell";
-import { VideoGrid } from "@/components/zab/VideoGrid";
+import { MusicList } from "@/components/zab/MusicList";
 import { AddMediaButton } from "@/components/zab/AddMediaButton";
 import { EmptyState } from "@/components/zab/EmptyState";
 import { useMediaItems } from "@/hooks/use-media-store";
 import { useGalleryScanner } from "../hooks/useGalleryScanner";
+import { audioPlayer } from "@/lib/audio-player";
 
-// यहाँ /music था जिसे मैंने "/" कर दिया है, ताकि लाल स्क्रीन हट जाए
 export const Route = createFileRoute("/music")({
-  component: VideosPage,
-  head: () => ({ meta: [{ title: "ZabPlay - Videos" }] }),
+  component: MusicPage,
+  head: () => ({ meta: [{ title: "ZabPlay - Music" }] }),
 });
 
-function VideosPage() {
-  const storedVideos = useMediaItems("video") || [];
+function MusicPage() {
+  const navigate = useNavigate();
+  const storedMusic = useMediaItems("music") || [];
   const { mediaFiles } = useGalleryScanner();
-  
-  // गैलरी से वीडियो फाइल्स निकालना
-  const allVideos = [
-    ...storedVideos, 
-    ...(mediaFiles?.filter((m) => m.kind === "video") || [])
+  const allMusic = [
+    ...storedMusic,
+    ...(mediaFiles?.filter((m) => m.kind === "music") || []),
   ];
 
   return (
     <AppShell>
-      {allVideos.length === 0 ? (
+      {allMusic.length === 0 ? (
         <EmptyState
-          icon={PlaySquare}
-          title="ZabPlay - No videos"
-          description="अपने फोन की गैलरी से वीडियो लोड करने के लिए नीचे बटन दबाएं।"
+          icon={Music2}
+          title="No music yet"
+          description="Import or scan songs to start listening in ZabPlay."
         />
       ) : (
-        <VideoGrid items={allVideos} />
+        <MusicList
+          items={allMusic}
+          onPlay={(item) => {
+            audioPlayer.playItem(allMusic, item);
+            navigate({ to: "/now-playing" });
+          }}
+        />
       )}
-      <AddMediaButton kind="video" label="Add videos" />
+      <AddMediaButton kind="music" label="Add music" />
     </AppShell>
   );
 }
